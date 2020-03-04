@@ -13,7 +13,7 @@ import java.util.Date;
  * @version 1.0
  * @since 2019-08-29
  */
-public class CombExamConfigVO {
+public class CombExamConfigVo {
     @JsonSerialize(using = ToStringSerializer.class)
     public Long id;
     /**
@@ -60,7 +60,7 @@ public class CombExamConfigVO {
     @JsonSerialize(using = ToStringSerializer.class)
     protected Long version;
 
-    public CombExamConfigVO() {
+    public CombExamConfigVo() {
     }
 
     public Long getId() {
@@ -145,7 +145,7 @@ public class CombExamConfigVO {
 
     @Override
     public String toString() {
-        return "CombExamConfigVO{" +
+        return "CombExamConfigVo{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", paperType=" + paperType +

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="aaron.paper.biz.dao.PaperDao">
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, paper_type, difficulty, comb_exam_time, paper_creator, score, description,
+        template, download_times, publish_times, status, org_id, company_id, created_by,
+        created_time, updated_by, update_time, version
+    </sql>
+</mapper>

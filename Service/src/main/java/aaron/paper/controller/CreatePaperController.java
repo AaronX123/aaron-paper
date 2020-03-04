@@ -4,13 +4,11 @@ import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
-import aaron.common.utils.SnowFlake;
 import aaron.paper.api.constant.ApiConstant;
-import aaron.paper.pojo.vo.CombExamConfigVO;
+import aaron.paper.pojo.vo.CombExamConfigVo;
 import aaron.paper.pojo.vo.Test;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,7 +28,7 @@ public class CreatePaperController {
 
     @MethodEnhancer
     @PostMapping(ApiConstant.CREATE_FAST_GEN)
-    public CommonResponse fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVO> request){
+    public CommonResponse fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVo> request){
         return new CommonResponse(version, CommonState.SUCCESS,CommonState.SUCCESS_MSG,null);
     }
 
