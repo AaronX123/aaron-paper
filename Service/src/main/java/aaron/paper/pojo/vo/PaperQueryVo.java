@@ -13,8 +13,6 @@ import java.util.Date;
  * @version 1.0
  * @since 2020-03-04
  */
-@Builder
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaperQueryVo extends BaseQueryVo {
@@ -38,4 +36,44 @@ public class PaperQueryVo extends BaseQueryVo {
      * 截至时间
      */
     private Date end;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Long getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Long difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public Date getStart() {
+        return start;
+    }
+
+    public void setStart(Date start) {
+        this.start = start;
+    }
+
+    public Date getEnd() {
+        return end;
+    }
+
+    public void setEnd(Date end) {
+        this.end = end;
+    }
 }

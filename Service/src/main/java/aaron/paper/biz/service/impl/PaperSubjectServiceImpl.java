@@ -1,6 +1,7 @@
 package aaron.paper.biz.service.impl;
 
 import aaron.paper.biz.dao.PaperSubjectDao;
+import aaron.paper.biz.service.PaperSubjectService;
 import aaron.paper.pojo.model.PaperSubject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
@@ -11,5 +12,5 @@ import org.springframework.stereotype.Service;
  * @since 2020-03-04
  */
 @Service
-public class PaperSubjectServiceImpl extends ServiceImpl<PaperSubjectDao, PaperSubject> {
+public class PaperSubjectServiceImpl extends ServiceImpl<PaperSubjectDao, PaperSubject> implements PaperSubjectService {
 }

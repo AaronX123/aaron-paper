@@ -1,6 +1,7 @@
 package aaron.paper.biz.service;
 
 import aaron.paper.biz.dao.PaperDao;
+import aaron.paper.pojo.model.Paper;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -8,5 +9,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @version 1.0
  * @since 2020-03-04
  */
-public interface PaperService extends IService<PaperDao> {
+public interface PaperService extends IService<Paper> {
 }

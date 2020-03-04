@@ -1,8 +1,11 @@
 package aaron.paper.biz.service.impl;
 
 import aaron.paper.biz.dao.PaperDao;
+import aaron.paper.biz.service.PaperService;
 import aaron.paper.pojo.model.Paper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.mapper.Wrapper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,5 +14,8 @@ import org.springframework.stereotype.Service;
  * @since 2020-03-04
  */
 @Service
-public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> {
+public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements PaperService {
+    public void test(){
+        Wrapper<Paper> wrapper = new EntityWrapper<>();
+    }
 }

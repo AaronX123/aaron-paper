@@ -2,9 +2,12 @@ package aaron.paper.api.api;
 
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
+import aaron.paper.api.constant.ApiConstant;
 import aaron.paper.api.dto.FuzzySearch;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperIdWithName;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -20,12 +23,14 @@ public interface PaperInfoApi {
      * @param paperId
      * @return
      */
+    @PostMapping(ApiConstant.PAPER_INFO_PUBLISH_PAPER)
     CommonResponse<Boolean> publishPaper(CommonRequest<Long> paperId);
 
     /**
      * 列出试卷Id和名称
      * @return
      */
+    @GetMapping(ApiConstant.PAPER_INFO_LIST_PAPER)
     CommonResponse<List<PaperIdWithName>> listPaper();
 
     /**
@@ -33,6 +38,7 @@ public interface PaperInfoApi {
      * @param request
      * @return
      */
+    @PostMapping(ApiConstant.PAPER_INFO_FUZZY_SEARCH)
     CommonResponse<List<PaperIdWithName>> fuzzySearchByPaperName(CommonRequest<FuzzySearch> request);
 
     /**
@@ -40,6 +46,7 @@ public interface PaperInfoApi {
      * @param request
      * @return
      */
+    @PostMapping(ApiConstant.PAPER_INFO_QUERY_DETAIL)
     CommonResponse<PaperDetail> queryDetailByPaperId(CommonRequest<Long> request);
 
     /**
@@ -47,6 +54,7 @@ public interface PaperInfoApi {
      * @param request
      * @return
      */
+    @PostMapping(ApiConstant.PAPER_INFO_QUERY_PUBLISHED_TIME)
     CommonResponse<Integer> queryPublishedTimesByPaperId(CommonRequest<Long> request);
 
     /**
@@ -54,6 +62,7 @@ public interface PaperInfoApi {
      * @param request
      * @return
      */
+    @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_NAME)
     CommonResponse<String> queryPaperNameByPaperId(CommonRequest<Long> request);
 
 }

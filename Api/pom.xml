@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>aaron</groupId>
-            <artifactId>exam-spring-boot-starter</artifactId>
+            <artifactId>common-boot-starter</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
