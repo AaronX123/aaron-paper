@@ -38,6 +38,7 @@ public class CreatePaperController {
         return new CommonResponse(version, CommonState.SUCCESS,CommonState.SUCCESS_MSG,null);
     }
 
+
     @MethodEnhancer
     @PostMapping("/t")
     public String s(@RequestBody Test test){

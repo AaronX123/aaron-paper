@@ -10,4 +10,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2020-03-04
  */
 public interface PaperService extends IService<Paper> {
+    void test();
 }

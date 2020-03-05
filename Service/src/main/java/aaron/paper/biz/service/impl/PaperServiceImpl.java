@@ -3,9 +3,9 @@ package aaron.paper.biz.service.impl;
 import aaron.paper.biz.dao.PaperDao;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.pojo.model.Paper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import com.baomidou.mybatisplus.mapper.Wrapper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements PaperService {
     public void test(){
-        Wrapper<Paper> wrapper = new EntityWrapper<>();
+        QueryWrapper<Paper> wrapper = new QueryWrapper<>();
+        wrapper.eq(Paper.COMPANY_ID,"624197208534945792");
+        Paper paper = baseMapper.selectOne(wrapper);
     }
 }
