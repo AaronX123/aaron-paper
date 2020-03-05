@@ -7,9 +7,12 @@ import aaron.paper.pojo.dto.PaperQueryDto;
 import aaron.paper.pojo.dto.SubjectAnswerDto;
 import aaron.paper.pojo.dto.SubjectDto;
 import aaron.paper.pojo.model.Paper;
+import aaron.paper.pojo.model.PaperSubject;
+import aaron.paper.pojo.model.PaperSubjectAnswer;
 import aaron.paper.pojo.vo.CustomizedCombExamConfigVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,7 +54,14 @@ public interface PaperService extends IService<Paper> {
      */
     boolean insertNewPaper(PaperDto paperDTO, Map<SubjectDto, SubjectAnswerDto[]> subjectMap);
 
-
+    /**
+     * 插入试卷
+     * @param paper
+     * @param subjectList
+     * @param subjectAnswerList
+     * @return
+     */
+    boolean insertPaper(Paper paper, List<PaperSubject> subjectList, List<PaperSubjectAnswer> subjectAnswerList);
     /**
      * 通过查询参数查询试卷
      * @param paperQueryDTO 查询试卷参数

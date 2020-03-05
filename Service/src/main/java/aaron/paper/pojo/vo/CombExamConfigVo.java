@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import javax.validation.constraints.Max;
+import javax.validation.constraints.NotBlank;
 import java.util.Date;
 
 /**
@@ -14,8 +15,9 @@ import java.util.Date;
  * @since 2019-08-29
  */
 public class CombExamConfigVo {
+    @NotBlank(message = "组卷配置id不能为空")
     @JsonSerialize(using = ToStringSerializer.class)
-    public Long id;
+    private Long id;
     /**
      * 组卷配置名
      */

@@ -1,9 +1,9 @@
 package aaron.paper;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 /**
@@ -12,7 +12,8 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  * @since 2020-03-03
  */
 
-//@EnableEurekaClient
+@EnableFeignClients
+@EnableEurekaClient
 @EnableAspectJAutoProxy(exposeProxy = true, proxyTargetClass = true)
 @SpringBootApplication()
 public class Application {

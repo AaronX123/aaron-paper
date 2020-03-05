@@ -3,12 +3,19 @@ package aaron.paper.controller;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
+import aaron.common.data.exception.StarterError;
 import aaron.common.logging.annotation.MethodEnhancer;
+import aaron.common.utils.CommonUtils;
+import aaron.common.utils.TokenUtils;
+import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.constant.ApiConstant;
+import aaron.paper.biz.service.PaperService;
+import aaron.paper.common.exception.PaperException;
+import aaron.paper.pojo.dto.PaperDto;
 import aaron.paper.pojo.vo.CombExamConfigVo;
-import aaron.paper.pojo.vo.Test;
+import aaron.paper.pojo.vo.CustomizedCombExamConfigVo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,25 +30,54 @@ import javax.validation.Valid;
 @Slf4j
 @RestController
 public class CreatePaperController {
-    @Value("${aaron.version")
-    public String version;
+    @Autowired
+    CommonState state;
 
+    @Autowired
+    PaperService paperService;
+
+
+    /**
+     * 快速组卷，应用场景：前端选择组卷配置后，将组卷配置
+     * @param request
+     * @return
+     */
     @MethodEnhancer
     @PostMapping(ApiConstant.CREATE_FAST_GEN)
-    public CommonResponse fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVo> request){
-        return new CommonResponse(version, CommonState.SUCCESS,CommonState.SUCCESS_MSG,null);
+    public CommonResponse<String> fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVo> request){
+        UserPermission userPermission = checkAccessAuthority();
+        CombExamConfigVo vo = request.getData();
+        PaperDto paperDto = CommonUtils.copyProperties(vo,PaperDto.class);
+        paperDto.setConfigId(vo.getId());
+        paperDto.setDescription(vo.getRemark());
+        paperDto.setPaperCreator(userPermission.getUserName());
+        paperDto.setStatus((byte) 1);
+        boolean res = paperService.generateFastMode(paperDto);
+        if (res){
+            return new CommonResponse<>(state.getVersion(), state.SUCCESS,state.SUCCESS_MSG,state.SUCCESS_MSG);
+        }
+        return new CommonResponse<>(state.getVersion(), state.FAIL,state.FAIL,state.FAIL_MSG);
     }
 
     @MethodEnhancer
     @PostMapping(ApiConstant.CREATE_STANDARD_GEN)
-    public CommonResponse standardGen(@RequestBody @Valid CommonRequest request){
-        return new CommonResponse(version, CommonState.SUCCESS,CommonState.SUCCESS_MSG,null);
+    public CommonResponse standardGen(@RequestBody @Valid CommonRequest<CustomizedCombExamConfigVo> request){
+        UserPermission userPermission = checkAccessAuthority();
+        CustomizedCombExamConfigVo vo = request.getData();
+        PaperDto paperDto = new PaperDto();
+        paperDto.setPaperCreator(userPermission.getUserName());
+        boolean res = paperService.generateNormalMode(paperDto,vo);
+        if (res){
+            return new CommonResponse<>(state.getVersion(), state.SUCCESS,state.SUCCESS_MSG,state.SUCCESS_MSG);
+        }
+        return new CommonResponse<>(state.getVersion(), state.FAIL,state.FAIL,state.FAIL_MSG);
     }
 
-
-    @MethodEnhancer
-    @PostMapping("/t")
-    public String s(@RequestBody Test test){
-        return test.getName();
+    private UserPermission checkAccessAuthority(){
+        UserPermission userPermission = TokenUtils.getUser();
+        if (userPermission.getCompanyId() == null){
+            throw new PaperException(StarterError.SYSTEM_ACCESS_INVALID);
+        }
+        return userPermission;
     }
 }

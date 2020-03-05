@@ -1,6 +1,7 @@
 package aaron.paper.common.exception;
 
 import aaron.common.data.exception.NestedExamException;
+import aaron.common.data.exception.StarterError;
 
 /**
  * @author xiaoyouming
@@ -12,7 +13,7 @@ public class PaperException extends NestedExamException {
     public PaperException(String errorMessage, String errorCode) {
         super(errorMessage, errorCode);
     }
-
+    public PaperException(StarterError error){ super(error.getMsg(),error.getCode());}
     public PaperException(PaperError error){
         super(error.msg,error.code);
     }

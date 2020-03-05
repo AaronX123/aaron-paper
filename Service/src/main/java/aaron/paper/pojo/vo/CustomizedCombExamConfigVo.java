@@ -22,6 +22,4 @@ public class CustomizedCombExamConfigVo {private String name;
     private String remark;
     private Long paperType;
     private List<CustomizedCombExamConfigItemVo> combExamConfigItemVos;
-
-
 }
