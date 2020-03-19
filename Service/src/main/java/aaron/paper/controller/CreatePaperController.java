@@ -10,12 +10,15 @@ import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.constant.ApiConstant;
 import aaron.paper.biz.service.PaperService;
+import aaron.paper.common.constant.ControllerConstant;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.pojo.dto.PaperDto;
+import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.vo.CombExamConfigVo;
 import aaron.paper.pojo.vo.CustomizedCombExamConfigVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,7 +46,7 @@ public class CreatePaperController {
      * @return
      */
     @MethodEnhancer
-    @PostMapping(ApiConstant.CREATE_FAST_GEN)
+    @PostMapping(ControllerConstant.CREATE_FAST_GEN)
     public CommonResponse<String> fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVo> request){
         UserPermission userPermission = checkAccessAuthority();
         CombExamConfigVo vo = request.getData();
@@ -60,7 +63,7 @@ public class CreatePaperController {
     }
 
     @MethodEnhancer
-    @PostMapping(ApiConstant.CREATE_STANDARD_GEN)
+    @PostMapping(ControllerConstant.CREATE_STANDARD_GEN)
     public CommonResponse standardGen(@RequestBody @Valid CommonRequest<CustomizedCombExamConfigVo> request){
         UserPermission userPermission = checkAccessAuthority();
         CustomizedCombExamConfigVo vo = request.getData();
@@ -73,11 +76,31 @@ public class CreatePaperController {
         return new CommonResponse<>(state.getVersion(), state.FAIL,state.FAIL,state.FAIL_MSG);
     }
 
+
+    @MethodEnhancer
+    @PostMapping(ControllerConstant.CREATE_TEMPLATE_GEN)
+    public CommonResponse templateGen(@RequestBody @Valid CommonRequest<Long> request){
+        checkAccessAuthority();
+        Long templateId = request.getData();
+        PaperDto paperDto = new PaperDto();
+        paperDto.setId(templateId);
+        boolean res = paperService.generateTemplateMode(paperDto);
+        if (res){
+            return new CommonResponse<>(state.getVersion(), state.SUCCESS,state.SUCCESS_MSG,state.SUCCESS_MSG);
+        }
+        return new CommonResponse<>(state.getVersion(), state.FAIL,state.FAIL,state.FAIL_MSG);
+    }
+
     private UserPermission checkAccessAuthority(){
         UserPermission userPermission = TokenUtils.getUser();
         if (userPermission.getCompanyId() == null){
             throw new PaperException(StarterError.SYSTEM_ACCESS_INVALID);
         }
         return userPermission;
+    }
+
+    @GetMapping("/he")
+    public String test(){
+        return "Hello";
     }
 }

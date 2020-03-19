@@ -33,6 +33,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_PUBLISH_PAPER)
     @Override
     public CommonResponse<Boolean> publishPaper(CommonRequest<Long> paperId) {
+
         return null;
     }
 

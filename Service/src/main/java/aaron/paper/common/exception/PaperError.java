@@ -14,6 +14,7 @@ public enum PaperError {
     PAPER_SUBJECT_ANSWER_INSERT_FAILURE("020006","试题答案插入失败"),
     PAPER_DELETE_FAILURE("020007","试卷删除失败"),
     PAPER_SUBJECT_IS_NULL("020008","试卷没有试题"),
+    PAPER_REPEATED_PAPER("020009","重复的试卷"),
     ;
     String code;
     String msg;

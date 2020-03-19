@@ -8,4 +8,5 @@
         template, download_times, publish_times, status, org_id, company_id, created_by,
         created_time, updated_by, update_time, version
     </sql>
+
 </mapper>

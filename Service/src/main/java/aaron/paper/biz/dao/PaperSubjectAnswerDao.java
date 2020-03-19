@@ -3,6 +3,9 @@ package aaron.paper.biz.dao;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * @author xiaoyouming
@@ -11,4 +14,10 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface PaperSubjectAnswerDao extends BaseMapper<PaperSubjectAnswer> {
+    /**
+     * 根据试题Id查询答案
+     * @param ids
+     * @return
+     */
+    List<PaperSubjectAnswer> batchQueryAnswerBySubjectId(@Param("ids")List<Long> ids);
 }

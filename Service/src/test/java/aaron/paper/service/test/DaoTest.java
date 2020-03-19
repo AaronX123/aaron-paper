@@ -22,6 +22,5 @@ public class DaoTest {
 
     @Test
     public void t(){
-        paperService.test();
     }
 }

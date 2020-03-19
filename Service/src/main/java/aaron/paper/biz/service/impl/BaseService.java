@@ -17,8 +17,11 @@ import aaron.paper.pojo.dto.SubjectDto;
 import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.model.PaperSubject;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -106,9 +109,9 @@ public class BaseService {
             throw new PaperException(PaperError.PAPER_NOT_EXIST);
         }
         Paper newPaper = setProperties(oldPaper,paperDto,false);
+        // 模板的下载次数加一
         oldPaper.setDownloadTimes(isDownload ? oldPaper.getDownloadTimes() + 1 : oldPaper.getDownloadTimes());
-        //todo
-        return true;
+        return copySubject(oldPaper,newPaper,false);
     }
 
     /**
@@ -119,6 +122,7 @@ public class BaseService {
      * @return
      */
     public boolean copySubject(Paper old, Paper newPaper, boolean isUpload){
+        // 查询原试卷的题目
         List<PaperSubject> subjectList = paperSubjectService.listSubjectByPaperId(old.getId());
         if (subjectList == null){
             throw new PaperException(PaperError.PAPER_SUBJECT_IS_NULL);
@@ -126,8 +130,57 @@ public class BaseService {
         // 获取试题id，然后去查询这些id对应的答案
         List<Long> subjectIdList = subjectList.stream().map(PaperSubject::getId).collect(Collectors.toList());
         List<PaperSubjectAnswer> paperSubjectAnswerList = paperSubjectAnswerService.listAnswerBySubjectIdList(subjectIdList);
-        //todo
-        return true;
+        // 复制答案
+        // 创建复制的答案集合
+        List<PaperSubjectAnswer> copiedAnswerList = new ArrayList<>(paperSubjectAnswerList.size());
+        List<PaperSubject> copiedSubjectList = new ArrayList<>(subjectList.size());
+        for (PaperSubject subject : subjectList) {
+            PaperSubject copiedSubject = CommonUtils.copyProperties(subject,PaperSubject.class);
+            copiedSubject.setPaperId(newPaper.getId());
+            copiedSubject.setId(snowFlake.nextId());
+            for (PaperSubjectAnswer answer : paperSubjectAnswerList) {
+                if (answer.getPaperSubjectId().equals(subject.getId())){
+                    PaperSubjectAnswer copiedAns = CommonUtils.copyProperties(answer,PaperSubjectAnswer.class);
+                    copiedAns.setPaperSubjectId(copiedSubject.getId());
+                    copiedAns.setId(snowFlake.nextId());
+                    copiedAnswerList.add(copiedAns);
+                }
+            }
+            copiedSubjectList.add(copiedSubject);
+        }
+        BaseService baseService = (BaseService) AopContext.currentProxy();
+        return baseService.insertPaper(old,newPaper,copiedSubjectList,copiedAnswerList,isUpload);
+    }
+
+    /**
+     * 插入试卷
+     * @param old
+     * @param newPaper
+     * @param subjectList
+     * @param answerList
+     * @param isUpload 上传模板时为true
+     * @return
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean insertPaper(Paper old, Paper newPaper, List<PaperSubject> subjectList, List<PaperSubjectAnswer> answerList, boolean isUpload){
+        try {
+            if (isUpload){
+                return paperService.save(newPaper) && paperSubjectService.saveBatch(subjectList)
+                        && paperSubjectAnswerService.saveBatch(answerList);
+            }else {
+                // 不是上传需要修改原试卷状态，下载次数
+                return paperService.updateById(old) && paperService.save(newPaper)
+                        && paperSubjectService.saveBatch(subjectList)
+                        && paperSubjectAnswerService.saveBatch(answerList);
+            }
+        }catch (Exception e){
+            if (e instanceof DuplicateKeyException){
+                throw new PaperException(PaperError.PAPER_REPEATED_PAPER);
+            }else {
+                throw new PaperException(PaperError.PAPER_INSERT_FAILURE);
+            }
+        }
+
     }
 
     public Paper setProperties(Paper old,PaperDto paperDto, boolean isTemplate){

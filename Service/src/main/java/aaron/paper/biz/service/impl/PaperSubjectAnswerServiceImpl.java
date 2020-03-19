@@ -26,6 +26,6 @@ public class PaperSubjectAnswerServiceImpl extends ServiceImpl<PaperSubjectAnswe
      */
     @Override
     public List<PaperSubjectAnswer> listAnswerBySubjectIdList(List<Long> list) {
-        return ;
+        return baseMapper.batchQueryAnswerBySubjectId(list);
     }
 }

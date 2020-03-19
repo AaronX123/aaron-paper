@@ -5,13 +5,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author xiaoyouming
  * @version 1.0
  * @since 2020-03-03
  */
-
+@EnableTransactionManagement
 @EnableFeignClients
 @EnableEurekaClient
 @EnableAspectJAutoProxy(exposeProxy = true, proxyTargetClass = true)

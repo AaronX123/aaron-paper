@@ -21,7 +21,7 @@ import java.util.Map;
  * @since 2020-03-04
  */
 public interface PaperService extends IService<Paper> {
-    void test();
+    int func();
 
 
     /**
@@ -46,13 +46,7 @@ public interface PaperService extends IService<Paper> {
      * @return
      */
     boolean generateTemplateMode(PaperDto paperDTO);
-    /**
-     * 插入试卷流程
-     * @param paperDTO
-     * @param subjectMap
-     * @return
-     */
-    boolean insertNewPaper(PaperDto paperDTO, Map<SubjectDto, SubjectAnswerDto[]> subjectMap);
+
 
     /**
      * 插入试卷
@@ -68,7 +62,7 @@ public interface PaperService extends IService<Paper> {
      * @return 返回满足此参数的试卷列表
      *
      */
-    Map<String,Object> queryPaper(PaperQueryDto paperQueryDTO);
+    Map<String,Object> queryPaper(PaperQueryDto paperQueryDTO, boolean isTemplate);
 
     /**
      * 准备要删除的试卷数据
@@ -93,11 +87,11 @@ public interface PaperService extends IService<Paper> {
 
     /**
      * download
-     * @param paperDTO the ids of which are downloaded
+     * @param paper the ids of which are downloaded
      * @return the count of downloaded
      * @exception Exception when parse a userPermission if token is invalid of expired and decode unsuccessfully
      */
-    boolean downloadTemplate(PaperDto paperDTO);
+    boolean downloadTemplate(Paper paper);
 
     /**
      * upload
@@ -129,4 +123,6 @@ public interface PaperService extends IService<Paper> {
      * @return
      */
     Map<String,Object> queryTemplate(PaperQueryDto paperQueryDTO);
+
+
 }

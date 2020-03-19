@@ -6,4 +6,13 @@
     <sql id="Base_Column_List">
         id, paper_subject_id, answer,right_answer, field1, field2, field3
     </sql>
+
+    <!-- 根据试题id查询答案-->
+    <select id="batchQueryAnswerBySubjectId" resultType="aaron.paper.pojo.model.PaperSubjectAnswer">
+        select <include refid="Base_Column_List"></include> from paper_subject_answer
+        where paper_subject_id in
+        <foreach collection="ids" item="id" separator="," close=")" open="(">
+            #{id}
+        </foreach>
+    </select>
 </mapper>
