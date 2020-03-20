@@ -32,4 +32,14 @@ public class PaperSubjectAnswerTest {
         list.add(660540243451711498L);
         List<PaperSubjectAnswer> res = service.listAnswerBySubjectIdList(list);
     }
+
+    @Test
+    public void testDeleteBySubjectId(){
+        List<Long> list = new ArrayList<>();
+        list.add(660540243451711493L);
+        list.add(660540243451711498L);
+        System.out.println(service.deleteBySubjectId(list));
+    }
+
+
 }

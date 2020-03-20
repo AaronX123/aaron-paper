@@ -2,6 +2,7 @@ package aaron.paper.biz.service;
 
 import aaron.paper.biz.dao.PaperSubjectDao;
 import aaron.paper.pojo.model.PaperSubject;
+import aaron.paper.pojo.model.PaperSubjectAnswer;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -18,4 +19,11 @@ public interface PaperSubjectService extends IService<PaperSubject> {
      * @return
      */
     List<PaperSubject> listSubjectByPaperId(Long paperId);
+
+    /**
+     * 通过试卷d集合来获取一批试题
+     * @param list
+     * @return
+     */
+    List<PaperSubject> listSubjectByPaperIdList(List<Long> list);
 }

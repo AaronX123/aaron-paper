@@ -6,4 +6,11 @@
     <sql id="Base_Column_List">
         id, paper_id, subject, category_id, subject_type_id, difficulty, score, field1, field2, field3
     </sql>
+
+    <select id="listSubjectByPaperIdList" resultType="aaron.paper.pojo.model.PaperSubject">
+        select id from paper_subject where paper_id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
 </mapper>

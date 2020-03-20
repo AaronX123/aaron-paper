@@ -15,4 +15,11 @@
             #{id}
         </foreach>
     </select>
+
+    <delete id="deleteBySubjectIdList">
+        delete from paper_subject_answer where paper_subject_id in
+        <foreach collection="ids" item="id" separator="," close=")" open="(">
+            #{id}
+        </foreach>
+    </delete>
 </mapper>

@@ -28,4 +28,15 @@ public class PaperSubjectServiceImpl extends ServiceImpl<PaperSubjectDao, PaperS
         wrapper.eq(PaperSubject.PAPER_ID,paperId);
         return list(wrapper);
     }
+
+    /**
+     * 通过试卷d集合来获取一批试题
+     *
+     * @param list
+     * @return
+     */
+    @Override
+    public List<PaperSubject> listSubjectByPaperIdList(List<Long> list) {
+        return baseMapper.listSubjectByPaperIdList(list);
+    }
 }

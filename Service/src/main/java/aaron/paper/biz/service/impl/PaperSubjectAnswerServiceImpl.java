@@ -28,4 +28,15 @@ public class PaperSubjectAnswerServiceImpl extends ServiceImpl<PaperSubjectAnswe
     public List<PaperSubjectAnswer> listAnswerBySubjectIdList(List<Long> list) {
         return baseMapper.batchQueryAnswerBySubjectId(list);
     }
+
+    /**
+     * 通过试题Id删除答案
+     *
+     * @param idList
+     * @return
+     */
+    @Override
+    public boolean deleteBySubjectId(List<Long> idList) {
+        return baseMapper.deleteBySubjectIdList(idList);
+    }
 }

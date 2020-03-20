@@ -12,4 +12,5 @@ public class ControllerConstant {
 
     public static final String MAINTAIN_QUERY_PAPER = "/maintain/query/paper";
     public static final String MAINTAIN_MODIFY_PAPER = "/maintain/modify/paper";
+    public static final String MAINTAIN_DELETE_PAPER = "/maintain/delete/paper";
 }

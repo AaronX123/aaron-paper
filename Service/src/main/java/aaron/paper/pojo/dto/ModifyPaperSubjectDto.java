@@ -1,6 +1,5 @@
-package aaron.paper.pojo.vo;
+package aaron.paper.pojo.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.AllArgsConstructor;
@@ -8,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,23 +18,25 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModifyPaperVo {
+public class ModifyPaperSubjectDto {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
-    private String name;
-    private String paperCreator;
     @JsonSerialize(using = ToStringSerializer.class)
-    private Long category;
-    private String categoryValue;
+    private Long subjectTypeId;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long categoryId;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long difficulty;
+    private String subject;
+    private String categoryValue;
     private String difficultyValue;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Shanghai")
-    private Date combExamTime;
-    private Double score;
-    private String description;
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long version;
-    private List<ModifyPaperSubjectVo> currentPaperSubjectVoList;
-    private List<Long> deletedId;
+    private String subjectTypeName;
+    /**
+     * 标记是否为组卷服务传过去的原始题目，如果从基础数据服务中添加题目，则在接收对象时此数据不为9999
+     */
+    private Integer mark;
+    /**
+     * 答案list
+     */
+    private List<ModifySubjectAnswerDto> modifySubjectAnswerDtos;
 }

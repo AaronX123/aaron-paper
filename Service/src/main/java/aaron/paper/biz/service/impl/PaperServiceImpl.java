@@ -8,6 +8,7 @@ import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.utils.CommonUtils;
+import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.dto.PaperDetail;
@@ -19,10 +20,7 @@ import aaron.paper.common.constant.EnumRPCType;
 import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.manager.baseinfo.BaseInfoApi;
-import aaron.paper.pojo.dto.PaperDto;
-import aaron.paper.pojo.dto.PaperQueryDto;
-import aaron.paper.pojo.dto.SubjectAnswerDto;
-import aaron.paper.pojo.dto.SubjectDto;
+import aaron.paper.pojo.dto.*;
 import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.model.PaperSubject;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
@@ -33,14 +31,13 @@ import aaron.user.api.dto.UserInfoDto;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaoyouming
@@ -66,6 +63,9 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
 
     @Autowired
     UserApi userApi;
+
+    @Autowired
+    SnowFlake snowFlake;
 
     @Override
     public int func(){
@@ -237,21 +237,127 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
      * @return 删除成功的条数
      */
     @Override
-    public int prepareDelete(Long[] paperIds) {
-        return 0;
+    public boolean paperDelete(Long[] paperIds) {
+        List<Long> delList = Arrays.asList(paperIds);
+        List<Paper> deletedPaperList = listByIds(delList);
+        List<PaperSubject> paperSubjectList = paperSubjectService.listSubjectByPaperIdList(delList);
+        List<Long> delSubjectIdList = paperSubjectList.stream().map(PaperSubject::getId).collect(Collectors.toList());
+        PaperServiceImpl service = (PaperServiceImpl) AopContext.currentProxy();
+        return service.deletePaper(delList,delSubjectIdList);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deletePaper(List<Long> paperIdList, List<Long> subjectIdList){
+        try {
+            return paperSubjectAnswerService.deleteBySubjectId(subjectIdList) &&
+                    paperSubjectService.removeByIds(subjectIdList) &&
+                    removeByIds(paperIdList);
+        }catch (Exception e){
+            throw new PaperException(PaperError.PAPER_DELETE_FAILURE);
+        }
+    }
     /**
      * 准备修改的资源
      *
-     * @param paperDetail
+     * @param paperDto
      * @return
      */
     @Override
-    public boolean prepareModify(PaperDetail paperDetail) {
-        return false;
+    public boolean paperModify(ModifyPaperDto paperDto) {
+        PaperServiceImpl paperService = (PaperServiceImpl) AopContext.currentProxy();
+        Paper paper = handlePaper(paperDto);
+        // 处理已经删除的试题
+        List<Long> deletedIdList = paperDto.getDeletedId();
+        double deletedScore = 0;
+        boolean hasDelete = false;
+        // 获取删除的题目分值
+        if (deletedIdList != null && deletedIdList.size() != 0){
+            hasDelete = true;
+            List<PaperSubject> deletedPaperSubject = paperSubjectService.listByIds(deletedIdList);
+            if (!CommonUtils.isEmpty(deletedPaperSubject)){
+                deletedScore = deletedPaperSubject.stream().map(PaperSubject::getScore).count();
+            }
+        }
+
+        // 处理新添加的试题
+        List<ModifyPaperSubjectDto> modifyPaperDtoList = paperDto.getCurrentPaperSubjectDtoList();
+        if (!CommonUtils.isEmpty(modifyPaperDtoList)){
+            // 获取mark不为9999的试题Id,9999是存在的试题
+            List<Long> addedSubjectIdList = modifyPaperDtoList.stream().filter(s-> 9999 != (s.getMark()))
+                    .map(ModifyPaperSubjectDto::getId).collect(Collectors.toList());
+            double addedScore = 0;
+            if (!CommonUtils.isEmpty(addedSubjectIdList)){
+                // 从基础数据服务中获取新添加的试题并进行拷贝
+                CommonResponse<SubjectPackage> response = baseInfoApi.getSubjectById(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),addedSubjectIdList));
+                Map<SubjectDto, List<SubjectAnswerDto>> newSubjectMap = baseService.parseSubjectPackage(response.getData());
+                // 拷贝试题
+                List<PaperSubject> addedSubject = new ArrayList<>(8);
+                List<PaperSubjectAnswer> addedSubjectAnswer = new ArrayList<>(32);
+                for (Map.Entry<SubjectDto, List<SubjectAnswerDto>> entry : newSubjectMap.entrySet()) {
+                    if (CommonUtils.notNull(entry,entry.getKey(),entry.getValue())){
+                        SubjectDto subjectDto = entry.getKey();
+                        PaperSubject subject = new PaperSubject();
+                        subject.setId(snowFlake.nextId());
+                        subject.setPaperId(paper.getId());
+                        subject.setCategoryId(subjectDto.getCategoryId());
+                        subject.setDifficulty(subjectDto.getDifficulty());
+                        subject.setSubjectTypeId(subjectDto.getSubjectTypeId());
+                        subject.setSubject(subjectDto.getName());
+                        // 题库里不保存试题分值 todo 增加设置题目分数的位置
+                        subject.setScore((double) 5);
+                        for (SubjectAnswerDto answerDto : entry.getValue()) {
+                            PaperSubjectAnswer answer = new PaperSubjectAnswer();
+                            answer.setId(snowFlake.nextId());
+                            answer.setPaperSubjectId(subject.getId());
+                            answer.setAnswer(answerDto.getAnswer());
+                            answer.setRightAnswer(answerDto.getRightAnswer());
+                            addedSubjectAnswer.add(answer);
+                        }
+                        addedSubject.add(subject);
+                        addedScore += subject.getScore();
+                    }
+                }
+                paper.setScore(paper.getScore() - deletedScore + addedScore);
+                return paperService.modifyPaper(paper,deletedIdList,addedSubject,addedSubjectAnswer,hasDelete,true);
+            }
+            return paperService.modifyPaper(paper,deletedIdList,null,null,hasDelete,false);
+        }
+        return paperService.modifyPaper(paper,deletedIdList,null,null,hasDelete,false);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public boolean modifyPaper(Paper paper, List<Long> deletedIdList, List<PaperSubject> addedSubject,
+                               List<PaperSubjectAnswer> addedAnswer, boolean hasDel, boolean hasNew){
+        if (hasDel && hasNew){
+            return paperSubjectAnswerService.deleteBySubjectId(deletedIdList) &&
+                    paperSubjectService.removeByIds(deletedIdList) &&
+                    updateById(paper) &&
+                    paperSubjectService.saveBatch(addedSubject) &&
+                    paperSubjectAnswerService.saveBatch(addedAnswer);
+        }else if (hasDel){
+            return paperSubjectAnswerService.deleteBySubjectId(deletedIdList) &&
+                    paperSubjectService.removeByIds(deletedIdList) &&
+                    updateById(paper);
+        }else if (hasNew){
+            return updateById(paper) && paperSubjectService.saveBatch(addedSubject) &&
+                    paperSubjectAnswerService.saveBatch(addedAnswer);
+        }else {
+            return updateById(paper);
+        }
+    }
+
+    private Paper handlePaper(ModifyPaperDto paperDto){
+        UserPermission user = TokenUtils.getUser();
+        Paper realPaper = getById(paperDto.getId());
+        Paper newPaper = CommonUtils.copyProperties(realPaper,Paper.class);
+        newPaper.setUpdatedTime(new Date());
+        newPaper.setUpdatedBy(user.getId());
+        newPaper.setDescription(paperDto.getDescription());
+        newPaper.setName(paperDto.getName());
+        newPaper.setDifficulty(paperDto.getDifficulty());
+        newPaper.setPaperType(paperDto.getCategory());
+        return newPaper;
+    }
     /**
      * 获取试卷详情
      *

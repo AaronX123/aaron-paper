@@ -1,4 +1,4 @@
-package aaron.paper.pojo.vo;
+package aaron.paper.pojo.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -20,7 +20,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModifyPaperVo {
+public class ModifyPaperDto {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     private String name;
@@ -37,6 +37,6 @@ public class ModifyPaperVo {
     private String description;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long version;
-    private List<ModifyPaperSubjectVo> currentPaperSubjectVoList;
+    private List<ModifyPaperSubjectDto> currentPaperSubjectDtoList;
     private List<Long> deletedId;
 }

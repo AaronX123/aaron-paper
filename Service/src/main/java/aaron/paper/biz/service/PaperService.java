@@ -2,14 +2,12 @@ package aaron.paper.biz.service;
 
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.biz.dao.PaperDao;
-import aaron.paper.pojo.dto.PaperDto;
-import aaron.paper.pojo.dto.PaperQueryDto;
-import aaron.paper.pojo.dto.SubjectAnswerDto;
-import aaron.paper.pojo.dto.SubjectDto;
+import aaron.paper.pojo.dto.*;
 import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.model.PaperSubject;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
 import aaron.paper.pojo.vo.CustomizedCombExamConfigVo;
+import aaron.paper.pojo.vo.ModifyPaperVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -69,14 +67,14 @@ public interface PaperService extends IService<Paper> {
      * @param paperIds 试卷id数组
      * @return 删除成功的条数
      */
-    int prepareDelete(Long[] paperIds);
+    boolean paperDelete(Long[] paperIds);
 
     /**
      * 准备修改的资源
      * @param paperDetail
      * @return
      */
-    boolean prepareModify(PaperDetail paperDetail);
+    boolean paperModify(ModifyPaperDto paperDetail);
 
     /**
      * 获取试卷详情

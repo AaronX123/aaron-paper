@@ -20,4 +20,11 @@ public interface PaperSubjectAnswerDao extends BaseMapper<PaperSubjectAnswer> {
      * @return
      */
     List<PaperSubjectAnswer> batchQueryAnswerBySubjectId(@Param("ids")List<Long> ids);
+
+    /**
+     * 通过试题id删除答案
+     * @param ids
+     * @return
+     */
+    boolean deleteBySubjectIdList(@Param("ids") List<Long> ids);
 }

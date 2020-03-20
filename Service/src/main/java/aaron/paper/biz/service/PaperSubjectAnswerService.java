@@ -18,4 +18,11 @@ public interface PaperSubjectAnswerService extends IService<PaperSubjectAnswer> 
      * @return
      */
     List<PaperSubjectAnswer> listAnswerBySubjectIdList(List<Long> list);
+
+    /**
+     * 通过试题Id删除答案
+     * @param idList
+     * @return
+     */
+    boolean deleteBySubjectId(List<Long> idList);
 }
