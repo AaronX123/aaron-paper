@@ -39,4 +39,7 @@ public class PaperSubject {
      */
     private Integer mark;
 
+    private String categoryValue;
+    private String difficultyValue;
+
 }

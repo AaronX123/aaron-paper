@@ -1,13 +1,19 @@
 package aaron.paper.controller;
 
+import aaron.baseinfo.api.dto.BaseDataDto;
+import aaron.common.data.common.CommonConstant;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
 import aaron.common.utils.CommonUtils;
+import aaron.common.utils.TokenUtils;
+import aaron.paper.api.dto.PaperDetail;
+import aaron.paper.api.dto.PaperSubject;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.common.constant.CacheConstant;
 import aaron.paper.common.constant.ControllerConstant;
+import aaron.paper.manager.baseinfo.BaseInfoApi;
 import aaron.paper.pojo.dto.ModifyPaperDto;
 import aaron.paper.pojo.dto.ModifyPaperSubjectDto;
 import aaron.paper.pojo.dto.PaperQueryDto;
@@ -41,6 +47,9 @@ public class MaintainPaperController {
 
     @Autowired
     CacheManager cacheManager;
+
+    @Autowired
+    BaseInfoApi baseInfoApi;
 
     /**
      * 查询试卷表单
@@ -90,5 +99,45 @@ public class MaintainPaperController {
             return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,true);
         }
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
+    }
+
+    @SuppressWarnings("all")
+    @MethodEnhancer
+    @PostMapping(ControllerConstant.MAINTAIN_PAPER_DETAIL)
+    public CommonResponse<PaperDetail> paperDetail(@RequestBody @Valid CommonRequest<Long> request){
+        long id = request.getData();
+        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+        if (cache != null && cache.get(id) != null){
+            PaperDetail detail = (PaperDetail) cache.get(id);
+            return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,detail);
+        }else {
+            PaperDetail detail = paperService.getPaperInfo(id);
+            // 需要将类型和难度转换下
+            detail.setDifficultyValue(getCache(detail.getDifficulty()));
+            detail.setCategoryValue(getCache(detail.getCategory()));
+            for (PaperSubject subject : detail.getCurrentPaperSubjectDtoList()) {
+                subject.setCategoryValue(getCache(subject.getCategoryId()));
+                subject.setDifficultyValue(getCache(subject.getDifficulty()));
+            }
+            cache.put(id,detail);
+            return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,detail);
+        }
+    }
+
+    /**
+     * 从redis中获取值Cache不可能为空因为allowInFlightCacheCreation默认为true会在不存在cache时主动创建
+     * @param id
+     * @return
+     */
+    @SuppressWarnings("all")
+    private String getCache(long id){
+        Cache cache = cacheManager.getCache(CommonConstant.DICTIONARY);
+        Cache.ValueWrapper valueWrapper = cache.get(id);
+        if (valueWrapper == null){
+            String value = baseInfoApi.getBaseData(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id)).getData();
+            cache.put(id,value);
+            return value;
+        }
+        return (String) valueWrapper.get();
     }
 }

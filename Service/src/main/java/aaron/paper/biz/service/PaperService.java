@@ -81,7 +81,7 @@ public interface PaperService extends IService<Paper> {
      * @param id
      * @return
      */
-    PaperDetail getPaperInfo(Long id);
+    PaperDetail getPaperInfo(long id);
 
     /**
      * download

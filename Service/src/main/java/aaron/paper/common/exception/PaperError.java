@@ -15,6 +15,8 @@ public enum PaperError {
     PAPER_DELETE_FAILURE("020007","试卷删除失败"),
     PAPER_SUBJECT_IS_NULL("020008","试卷没有试题"),
     PAPER_REPEATED_PAPER("020009","重复的试卷"),
+    PAPER_PUBLISHED_CANT_DELETE("0200010","已发布的试卷无法删除"),
+    PAPER_ANSWER_IS_EMPTY("020011","试题答案为空"),
 
     ;
     String code;

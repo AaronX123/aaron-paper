@@ -240,6 +240,10 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     public boolean paperDelete(Long[] paperIds) {
         List<Long> delList = Arrays.asList(paperIds);
         List<Paper> deletedPaperList = listByIds(delList);
+        // 已经发布的试卷不能删除
+        deletedPaperList.forEach(paper -> {if (paper.getPublishTimes() != 0){
+            throw new PaperException(PaperError.PAPER_PUBLISHED_CANT_DELETE);
+            }});
         List<PaperSubject> paperSubjectList = paperSubjectService.listSubjectByPaperIdList(delList);
         List<Long> delSubjectIdList = paperSubjectList.stream().map(PaperSubject::getId).collect(Collectors.toList());
         PaperServiceImpl service = (PaperServiceImpl) AopContext.currentProxy();
@@ -365,8 +369,52 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
      * @return
      */
     @Override
-    public PaperDetail getPaperInfo(Long id) {
-        return null;
+    public PaperDetail getPaperInfo(long id) {
+        // 获取试卷
+        Paper paper = getById(id);
+        if (paper == null){
+            throw new PaperException(PaperError.PAPER_NOT_EXIST);
+        }
+        List<PaperSubject> subjectList = paperSubjectService.listSubjectByPaperId(id);
+        if (CommonUtils.isEmpty(subjectList)){
+            throw new PaperException(PaperError.PAPER_SUBJECT_IS_NULL);
+        }
+        // 根据题目查询答案
+        List<Long> subjectIdList = subjectList.stream().map(PaperSubject::getId).collect(Collectors.toList());
+        List<PaperSubjectAnswer> answerList = paperSubjectAnswerService.listAnswerBySubjectIdList(subjectIdList);
+        if (CommonUtils.isEmpty(answerList)){
+            throw new PaperException(PaperError.PAPER_ANSWER_IS_EMPTY);
+        }
+        List<aaron.paper.api.dto.PaperSubject> subjectDtoList = new ArrayList<>(subjectIdList.size());
+        // 类型转换
+        subjectList.forEach(subject -> {
+            aaron.paper.api.dto.PaperSubject subjectDto = CommonUtils.copyProperties(subject, aaron.paper.api.dto.PaperSubject.class);
+            List<PaperSubjectAnswer> subjectAnswers = answerList.stream()
+                    .filter(ans -> ans.getPaperSubjectId().equals(subject.getId()))
+                    .collect(Collectors.toList());
+            List<aaron.paper.api.dto.PaperSubjectAnswer> ansList = CommonUtils.convertList(subjectAnswers, aaron.paper.api.dto.PaperSubjectAnswer.class);
+            subjectDto.setSubjectAnswerVoList(ansList);
+            // 判断是否为客观题
+            subjectDto.setObjectiveSubject(checkObjectiveSubject(subjectDto.getSubjectTypeId()));
+            subjectDto.setMark(9999);
+            subjectDtoList.add(subjectDto);
+        });
+        PaperDetail detail = CommonUtils.copyProperties(paper,PaperDetail.class);
+        detail.setCategory(paper.getPaperType());
+        detail.setCurrentPaperSubjectDtoList(subjectDtoList);
+        return detail;
+    }
+
+    /**
+     * 判断是否为客观题
+     * @param id
+     * @return
+     */
+    private Boolean checkObjectiveSubject (Long id){
+        Long objectiveSubject1 = 616293886733721600L;
+        Long objectiveSubject2 = 616293908820926464L;
+        Long objectiveSubject3 = 616954547683860480L;
+        return (objectiveSubject1.equals(id) || objectiveSubject2.equals(id) || objectiveSubject3.equals(id));
     }
 
     /**

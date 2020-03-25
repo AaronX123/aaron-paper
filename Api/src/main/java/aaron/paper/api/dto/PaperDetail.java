@@ -32,9 +32,10 @@ public class PaperDetail {
      */
     @JsonSerialize(using = ToStringSerializer.class)
     private Long category;
+    private String categoryValue;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long difficulty;
-
+    private String difficultyValue;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Shanghai")
     private Date combExamTime;
     private Double score;

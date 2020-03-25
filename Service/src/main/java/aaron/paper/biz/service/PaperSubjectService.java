@@ -18,7 +18,7 @@ public interface PaperSubjectService extends IService<PaperSubject> {
      * @param paperId
      * @return
      */
-    List<PaperSubject> listSubjectByPaperId(Long paperId);
+    List<PaperSubject> listSubjectByPaperId(long paperId);
 
     /**
      * 通过试卷d集合来获取一批试题

@@ -7,4 +7,5 @@ package aaron.paper.common.constant;
  */
 public class CacheConstant {
     public static final String PAPER_ID = "paper_id";
+    public static final String PAPER_DETAIL = "paper_detail";
 }

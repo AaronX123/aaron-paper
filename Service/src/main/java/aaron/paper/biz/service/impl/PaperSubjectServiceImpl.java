@@ -23,7 +23,7 @@ public class PaperSubjectServiceImpl extends ServiceImpl<PaperSubjectDao, PaperS
      * @return
      */
     @Override
-    public List<PaperSubject> listSubjectByPaperId(Long paperId) {
+    public List<PaperSubject> listSubjectByPaperId(long paperId) {
         QueryWrapper<PaperSubject> wrapper = new QueryWrapper<>();
         wrapper.eq(PaperSubject.PAPER_ID,paperId);
         return list(wrapper);
