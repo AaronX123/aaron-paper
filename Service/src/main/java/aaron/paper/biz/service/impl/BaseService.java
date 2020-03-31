@@ -2,6 +2,9 @@ package aaron.paper.biz.service.impl;
 
 import aaron.baseinfo.api.dto.SubjectPackage;
 import aaron.baseinfo.api.dto.SubjectPackageDto;
+import aaron.common.data.common.CommonConstant;
+import aaron.common.data.common.CommonRequest;
+import aaron.common.data.common.CommonState;
 import aaron.common.utils.CommonUtils;
 import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
@@ -9,8 +12,10 @@ import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.PaperSubjectAnswerService;
 import aaron.paper.biz.service.PaperSubjectService;
+import aaron.paper.common.constant.CacheConstant;
 import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
+import aaron.paper.manager.baseinfo.BaseInfoApi;
 import aaron.paper.pojo.dto.PaperDto;
 import aaron.paper.pojo.dto.SubjectAnswerDto;
 import aaron.paper.pojo.dto.SubjectDto;
@@ -19,6 +24,8 @@ import aaron.paper.pojo.model.PaperSubject;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +51,15 @@ public class BaseService {
 
     @Autowired
     PaperSubjectAnswerService paperSubjectAnswerService;
+
+    @Autowired
+    CacheManager cacheManager;
+
+    @Autowired
+    BaseInfoApi baseInfoApi;
+
+    @Autowired
+    CommonState commonState;
 
     public Map<SubjectDto, List<SubjectAnswerDto>> parseSubjectPackage(SubjectPackage subjectPackage){
         List<SubjectPackageDto> dtoList = subjectPackage.getDtoList();
@@ -211,5 +227,42 @@ public class BaseService {
             res += subject.getScore();
         }
         return res;
+    }
+
+    /**
+     * 清除缓存的试卷详情
+     * 从redis中获取值Cache不可能为空因为allowInFlightCacheCreation默认为true会在不存在cache时主动创建
+     * @param id
+     * @return
+     */
+    @SuppressWarnings("all")
+    public String getCache(long id){
+        Cache cache = cacheManager.getCache(CommonConstant.DICTIONARY);
+        Cache.ValueWrapper valueWrapper = cache.get(id);
+        if (valueWrapper == null){
+            String value = baseInfoApi.getBaseData(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id)).getData();
+            cache.put(id,value);
+            return value;
+        }
+        return (String) valueWrapper.get();
+    }
+
+    /**
+     * 清除缓存的试卷详情
+     * 从redis中获取值Cache不可能为空因为allowInFlightCacheCreation默认为true会在不存在cache时主动创建
+     * @param id
+     * @return
+     */
+    @SuppressWarnings("all")
+    public void evictPaper(Long[] paperIdList){
+        for (Long id : paperIdList) {
+            Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+            cache.evict(id);
+        }
+    }
+    @SuppressWarnings("all")
+    public void evictPaper(long id){
+        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+        cache.evict(id);
     }
 }

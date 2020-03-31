@@ -1,6 +1,7 @@
 package aaron.paper.biz.service;
 
 import aaron.paper.api.dto.PaperDetail;
+import aaron.paper.api.dto.PaperIdWithName;
 import aaron.paper.biz.dao.PaperDao;
 import aaron.paper.pojo.dto.*;
 import aaron.paper.pojo.model.Paper;
@@ -19,7 +20,6 @@ import java.util.Map;
  * @since 2020-03-04
  */
 public interface PaperService extends IService<Paper> {
-    int func();
 
 
     /**
@@ -89,31 +89,22 @@ public interface PaperService extends IService<Paper> {
      * @return the count of downloaded
      * @exception Exception when parse a userPermission if token is invalid of expired and decode unsuccessfully
      */
-    boolean downloadTemplate(Paper paper);
+    boolean downloadTemplate(PaperDto paper);
 
     /**
      * upload
-     * @param paperDTO the id of uploaded
+     * @param paper the id of uploaded
      * @return the count of uploaded
      * @exception Exception when parse a userPermission if token is invalid of expired and decode unsuccessfully
      */
-    boolean uploadTemplate(PaperDto paperDTO);
+    boolean uploadTemplate(PaperDto paper);
 
     /**
      * remove batch of templates
      * @param paperTemplateIds the paper id of a template
      * @return the count of removed paper
      */
-    int deleteTemplate(Long[] paperTemplateIds);
-
-
-    /**
-     * 对一张试卷进行深复制并且进行插入
-     * @param p
-     * @param newPo
-     * @return
-     */
-    boolean deepCopyPaper(Paper p, Paper newPo);
+    boolean deleteTemplate(Long[] paperTemplateIds);
 
     /**
      * 查询模板
@@ -122,5 +113,17 @@ public interface PaperService extends IService<Paper> {
      */
     Map<String,Object> queryTemplate(PaperQueryDto paperQueryDTO);
 
+    /**
+     * 发布试卷，也就是将试卷中publishedTime加一
+     * @param id
+     * @return
+     */
+    boolean publish(long id);
 
+    /**
+     * 列出该公司的所有试卷
+     * @param companyId
+     * @return
+     */
+    List<PaperIdWithName> list(long companyId);
 }

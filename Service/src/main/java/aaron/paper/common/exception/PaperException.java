@@ -20,5 +20,7 @@ public class PaperException extends NestedExamException {
     public PaperException(PaperError error, Object...o){
         super(String.format(error.msg,o),error.code);
     }
-
+    public PaperException(StarterError error,Object...o){
+        super(String.format(error.getMsg(),o),error.getCode());
+    }
 }

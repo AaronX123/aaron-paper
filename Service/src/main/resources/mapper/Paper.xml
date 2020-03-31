@@ -9,4 +9,7 @@
         created_time, updated_by, update_time, version
     </sql>
 
+    <select id="select" resultType="java.lang.Object">
+        ${sql}
+    </select>
 </mapper>

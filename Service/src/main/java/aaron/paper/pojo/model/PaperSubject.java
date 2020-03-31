@@ -1,5 +1,4 @@
 package aaron.paper.pojo.model;
-
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 import lombok.experimental.Accessors;

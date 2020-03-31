@@ -3,6 +3,7 @@ package aaron.paper.biz.dao;
 import aaron.paper.pojo.model.Paper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * @author xiaoyouming
@@ -11,5 +12,5 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface PaperDao extends BaseMapper<Paper> {
-    int func();
+    Object select(@Param("sql")String sql);
 }

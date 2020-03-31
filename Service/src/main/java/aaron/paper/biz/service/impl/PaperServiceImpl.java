@@ -7,11 +7,13 @@ import aaron.common.aop.annotation.FullCommonField;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
+import aaron.common.data.exception.StarterError;
 import aaron.common.utils.CommonUtils;
 import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.dto.PaperDetail;
+import aaron.paper.api.dto.PaperIdWithName;
 import aaron.paper.biz.dao.PaperDao;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.PaperSubjectAnswerService;
@@ -36,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,11 +69,6 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
 
     @Autowired
     SnowFlake snowFlake;
-
-    @Override
-    public int func(){
-        return baseMapper.func();
-    }
 
     /**
      * 快速组卷
@@ -178,52 +176,14 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     }
 
     private Map<String,Object> convertId(List<Paper> paperList,long total){
-        /**
-         * 缓存单次请求中的RPC请求数据,Long型是因为系统多个微服务中的ID必然不同。设计这个Cache是为了
-         * 减少多次重复的请求，加快速度，设计成局部变量是因为如果是全局那么在其他服务修改后会失效，
-         * 为了减去每次校验是否为过期数据的性能消耗。另外由于服务器内存只有1GB，为了节约空间，不让
-         * 变量长时间驻留内存中。
-         */
-        Map<Long,String> cache = new HashMap<>(8);
         Map<String,Object> map = new HashMap<>(2);
         List<PaperVo> paperVoList = new ArrayList<>(paperList.size());
         for (Paper paper : paperList) {
             PaperVo vo = CommonUtils.copyProperties(paper,PaperVo.class);
-            boolean flag = false;
-            if (flag = cache.containsKey(paper.getCompanyId())){
-                vo.setCompanyValue(cache.get(paper.getCompanyId()));
-            }
-            if (flag &= cache.containsKey(paper.getUpdatedBy())){
-                vo.setUpdatedByValue(cache.get(paper.getUpdatedBy()));
-            }
-            if (!flag){
-                List<Long> list = new ArrayList<>(2);
-                list.add(paper.getCompanyId());
-                list.add(paper.getUpdatedBy());
-                UserInfoDto userInfoDto = userApi.getUserInfo(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),list)).getData();
-                cache.put(paper.getCompanyId(),userInfoDto.getNameMap().get(paper.getCompanyId()));
-                cache.put(paper.getUpdatedBy(),userInfoDto.getNameMap().get(paper.getUpdatedBy()));
-                vo.setCompanyValue(userInfoDto.getNameMap().get(paper.getCompanyId()));
-                vo.setCompanyValue(userInfoDto.getNameMap().get(paper.getUpdatedBy()));
-            }
-            if (flag = cache.containsKey(paper.getPaperType())){
-                vo.setPaperTypeValue(cache.get(paper.getPaperType()));
-            }
-            if (flag &= cache.containsKey(paper.getDifficulty())){
-                vo.setDifficultyValue(cache.get(paper.getDifficulty()));
-            }
-            if (!flag){
-                BaseDataDto dataDto = new BaseDataDto();
-                Map<Long,String> baseDataMap = new HashMap<>(2);
-                baseDataMap.put(paper.getPaperType()," ");
-                baseDataMap.put(paper.getDifficulty()," ");
-                dataDto.setBaseInfoMap(baseDataMap);
-                BaseDataDto baseDataDto = baseInfoApi.getBaseDataS(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),dataDto)).getData();
-                cache.put(paper.getPaperType(),baseDataDto.getBaseInfoMap().get(paper.getPaperType()));
-                cache.put(paper.getDifficulty(),baseDataDto.getBaseInfoMap().get(paper.getDifficulty()));
-                vo.setPaperTypeValue(baseDataDto.getBaseInfoMap().get(paper.getPaperType()));
-                vo.setDifficultyValue(baseDataDto.getBaseInfoMap().get(paper.getDifficulty()));
-            }
+            vo.setCompanyValue(baseService.getCache(vo.getCompanyId()));
+            vo.setUpdatedByValue(baseService.getCache(vo.getUpdatedBy()));
+            vo.setPaperTypeValue(baseService.getCache(vo.getPaperType()));
+            vo.setDifficultyValue(baseService.getCache(vo.getDifficulty()));
         }
         map.put("PaperVO",paperVoList);
         map.put("total",total);
@@ -424,21 +384,30 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
      * @return the count of downloaded
      * @throws Exception when parse a userPermission if token is invalid of expired and decode unsuccessfully
      */
+    @FullCommonField
     @Override
-    public boolean downloadTemplate(Paper paper) {
-        return false;
+    public boolean downloadTemplate(PaperDto paper) {
+        Paper template = getById(paper.getPreId());
+        template.setDownloadTimes(template.getDownloadTimes() + 1);
+        Paper newPaper = baseService.setProperties(template,paper,false);
+        return baseService.copySubject(template,newPaper,false);
     }
 
     /**
      * upload
      *
-     * @param paperDTO the id of uploaded
+     * @param paper the id of uploaded
      * @return the count of uploaded
      * @throws Exception when parse a userPermission if token is invalid of expired and decode unsuccessfully
      */
     @Override
-    public boolean uploadTemplate(PaperDto paperDTO) {
-        return false;
+    public boolean uploadTemplate(PaperDto paper) {
+        Paper old = getById(paper.getId());
+        if (old == null){
+            throw new PaperException(PaperError.PAPER_NOT_EXIST);
+        }
+        Paper newPaper = baseService.setProperties(old,paper,true);
+        return baseService.copySubject(old,newPaper,true);
     }
 
     /**
@@ -448,20 +417,24 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
      * @return the count of removed paper
      */
     @Override
-    public int deleteTemplate(Long[] paperTemplateIds) {
-        return 0;
+    public boolean deleteTemplate(Long[] paperTemplateIds) {
+        List<Paper> templates = listByIds(Arrays.asList(paperTemplateIds));
+        // 检查参数是否合法
+        templates.forEach(p -> {
+            if (p.getTemplate() != 1) {throw new PaperException(StarterError.SYSTEM_PARAMETER_VALUE_INVALID,p.getId(),"不是模板");}
+        });
+        List<PaperSubject> subjectList = paperSubjectService.listSubjectByPaperIdList(Arrays.asList(paperTemplateIds));
+        List<Long> subjectIdList = subjectList.stream().map(PaperSubject::getId).collect(Collectors.toList());
+        if (CommonUtils.isEmpty(subjectList)){
+            return false;
+        }
+        PaperServiceImpl service = (PaperServiceImpl) AopContext.currentProxy();
+        return service.deleteTemplate(Arrays.asList(paperTemplateIds),subjectIdList);
     }
 
-    /**
-     * 对一张试卷进行深复制并且进行插入
-     *
-     * @param p
-     * @param newPo
-     * @return
-     */
-    @Override
-    public boolean deepCopyPaper(Paper p, Paper newPo) {
-        return false;
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteTemplate(List<Long> paperIdList, List<Long> subjectIdList){
+        return paperSubjectAnswerService.deleteBySubjectId(subjectIdList) && paperSubjectService.removeByIds(subjectIdList) && removeByIds(paperIdList);
     }
 
     /**
@@ -472,9 +445,39 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
      */
     @Override
     public Map<String, Object> queryTemplate(PaperQueryDto paperQueryDTO) {
-        return null;
+        return queryPaper(paperQueryDTO,true);
     }
 
+    /**
+     * 发布试卷，也就是将试卷中publishedTime加一
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public boolean publish(long id) {
+        Paper paper = getById(id);
+        if (paper == null){
+            throw new PaperException(PaperError.PAPER_NOT_EXIST);
+        }
+        paper.setPublishTimes(paper.getPublishTimes() +  1);
+        return updateById(paper);
+    }
 
-
+    /**
+     * 列出该公司的所有试卷
+     *
+     * @param companyId
+     * @return
+     */
+    @Override
+    public List<PaperIdWithName> list(long companyId) {
+        QueryWrapper<Paper> wrapper = new QueryWrapper<>();
+        wrapper.select(Paper.ID,Paper.NAME);
+        wrapper.eq(Paper.COMPANY_ID,companyId);
+        List<Paper> paperList = list(wrapper);
+        return paperList.stream().map(p -> {
+            return new PaperIdWithName(p.getId(),p.getName());
+        }).collect(Collectors.toList());
+    }
 }

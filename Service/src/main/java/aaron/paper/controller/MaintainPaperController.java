@@ -1,16 +1,14 @@
 package aaron.paper.controller;
 
-import aaron.baseinfo.api.dto.BaseDataDto;
-import aaron.common.data.common.CommonConstant;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
 import aaron.common.utils.CommonUtils;
-import aaron.common.utils.TokenUtils;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperSubject;
 import aaron.paper.biz.service.PaperService;
+import aaron.paper.biz.service.impl.BaseService;
 import aaron.paper.common.constant.CacheConstant;
 import aaron.paper.common.constant.ControllerConstant;
 import aaron.paper.manager.baseinfo.BaseInfoApi;
@@ -51,6 +49,9 @@ public class MaintainPaperController {
     @Autowired
     BaseInfoApi baseInfoApi;
 
+    @Autowired
+    BaseService baseService;
+
     /**
      * 查询试卷表单
      * @param request
@@ -74,19 +75,12 @@ public class MaintainPaperController {
         ModifyPaperVo vo = request.getData();
         ModifyPaperDto detail = CommonUtils.copyProperties(vo,ModifyPaperDto.class);
         List<ModifyPaperSubjectDto> currentPaperSubjectList = vo.getCurrentPaperSubjectVoList().stream().map(
-                subject -> {
-                    return CommonUtils.copyComplicateObject(subject,ModifyPaperSubjectDto.class);
-                }
+                subject -> CommonUtils.copyComplicateObject(subject,ModifyPaperSubjectDto.class)
         ).collect(Collectors.toList());
         detail.setCurrentPaperSubjectDtoList(currentPaperSubjectList);
         if (paperService.paperModify(detail)){
-            // 置缓存失效
-            Cache cache = cacheManager.getCache(CacheConstant.PAPER_ID);
-            if (cache != null){
-                cache.evict(vo.getId());
-            }
+            baseService.evictPaper(vo.getId());
             return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,true);
-
         }
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
     }
@@ -96,6 +90,7 @@ public class MaintainPaperController {
     public CommonResponse deletePaper(@RequestBody @Valid CommonRequest<Long[]> request){
         Long[] deletedIdArray = request.getData();
         if (paperService.paperDelete(deletedIdArray)){
+            baseService.evictPaper(deletedIdArray);
             return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,true);
         }
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
@@ -113,31 +108,15 @@ public class MaintainPaperController {
         }else {
             PaperDetail detail = paperService.getPaperInfo(id);
             // 需要将类型和难度转换下
-            detail.setDifficultyValue(getCache(detail.getDifficulty()));
-            detail.setCategoryValue(getCache(detail.getCategory()));
+            detail.setDifficultyValue(baseService.getCache(detail.getDifficulty()));
+            detail.setCategoryValue(baseService.getCache(detail.getCategory()));
             for (PaperSubject subject : detail.getCurrentPaperSubjectDtoList()) {
-                subject.setCategoryValue(getCache(subject.getCategoryId()));
-                subject.setDifficultyValue(getCache(subject.getDifficulty()));
+                subject.setCategoryValue(baseService.getCache(subject.getCategoryId()));
+                subject.setDifficultyValue(baseService.getCache(subject.getDifficulty()));
             }
             cache.put(id,detail);
             return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,detail);
         }
     }
 
-    /**
-     * 从redis中获取值Cache不可能为空因为allowInFlightCacheCreation默认为true会在不存在cache时主动创建
-     * @param id
-     * @return
-     */
-    @SuppressWarnings("all")
-    private String getCache(long id){
-        Cache cache = cacheManager.getCache(CommonConstant.DICTIONARY);
-        Cache.ValueWrapper valueWrapper = cache.get(id);
-        if (valueWrapper == null){
-            String value = baseInfoApi.getBaseData(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id)).getData();
-            cache.put(id,value);
-            return value;
-        }
-        return (String) valueWrapper.get();
-    }
 }

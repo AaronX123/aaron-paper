@@ -70,4 +70,8 @@ public class PaperDto extends BaseDto {
      * 版本
      */
     private Long version;
+    /**
+     * 原id在通过FullCommonField时会被替换成新的，因此需要保存起来。
+     */
+    private Long preId;
 }

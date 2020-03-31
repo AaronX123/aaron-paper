@@ -1,6 +1,8 @@
 package aaron.paper.service.test;
 
+import aaron.paper.biz.dao.PaperDao;
 import aaron.paper.biz.service.PaperService;
+import aaron.paper.pojo.dto.PaperDto;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +22,11 @@ public class DaoTest {
     @Autowired
     PaperService paperService;
 
+    @Autowired
+    PaperDao paperDao;
+
     @Test
     public void t(){
+        paperDao.select("select * from paper where 1 = 1 ");
     }
 }

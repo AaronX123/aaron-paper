@@ -2,13 +2,18 @@ package aaron.paper.api.impl;
 
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
+import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
+import aaron.common.utils.TokenUtils;
+import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.api.PaperInfoApi;
 import aaron.paper.api.constant.ApiConstant;
 import aaron.paper.api.dto.FuzzySearch;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperIdWithName;
+import aaron.paper.biz.service.PaperService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +28,12 @@ import java.util.List;
 @RestController
 @Slf4j
 public class PaperInfoApiImpl implements PaperInfoApi {
+    @Autowired
+    PaperService paperService;
+
+    @Autowired
+    CommonState state;
+
     /**
      * 发布试卷
      *
@@ -33,8 +44,10 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_PUBLISH_PAPER)
     @Override
     public CommonResponse<Boolean> publishPaper(CommonRequest<Long> paperId) {
-
-        return null;
+        if(paperService.publish(paperId.getData())){
+            return new CommonResponse<>(state.getVersion(), state.SUCCESS,state.SUCCESS_MSG,true);
+        }
+        return new CommonResponse<>(state.getVersion(), state.FAIL,state.FAIL,false);
     }
 
     /**
@@ -46,7 +59,9 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @GetMapping(ApiConstant.PAPER_INFO_LIST_PAPER)
     @Override
     public CommonResponse<List<PaperIdWithName>> listPaper() {
-        return null;
+        UserPermission userPermission = TokenUtils.getUser();
+        List<PaperIdWithName> res = paperService.list(userPermission.getCompanyId());
+        return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,res);
     }
 
     /**
