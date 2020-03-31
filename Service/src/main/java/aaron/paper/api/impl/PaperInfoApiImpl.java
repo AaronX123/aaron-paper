@@ -74,7 +74,8 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_FUZZY_SEARCH)
     @Override
     public CommonResponse<List<PaperIdWithName>> fuzzySearchByPaperName(CommonRequest<FuzzySearch> request) {
-        return null;
+        List<PaperIdWithName> res = paperService.listByName(request.getData());
+        return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,res);
     }
 
     /**

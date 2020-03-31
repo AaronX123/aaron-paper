@@ -1,5 +1,6 @@
 package aaron.paper.biz.service;
 
+import aaron.paper.api.dto.FuzzySearch;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperIdWithName;
 import aaron.paper.biz.dao.PaperDao;
@@ -126,4 +127,11 @@ public interface PaperService extends IService<Paper> {
      * @return
      */
     List<PaperIdWithName> list(long companyId);
+
+    /**
+     * 通过试卷名模糊搜索
+     * @param fuzzySearch
+     * @return
+     */
+    List<PaperIdWithName> listByName(FuzzySearch fuzzySearch);
 }

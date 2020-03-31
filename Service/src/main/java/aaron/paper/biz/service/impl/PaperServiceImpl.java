@@ -12,6 +12,7 @@ import aaron.common.utils.CommonUtils;
 import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
+import aaron.paper.api.dto.FuzzySearch;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperIdWithName;
 import aaron.paper.biz.dao.PaperDao;
@@ -476,8 +477,26 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
         wrapper.select(Paper.ID,Paper.NAME);
         wrapper.eq(Paper.COMPANY_ID,companyId);
         List<Paper> paperList = list(wrapper);
-        return paperList.stream().map(p -> {
-            return new PaperIdWithName(p.getId(),p.getName());
-        }).collect(Collectors.toList());
+        return paperList.stream().map(p ->
+            new PaperIdWithName(p.getId(),p.getName())
+        ).collect(Collectors.toList());
+    }
+
+    /**
+     * 通过试卷名模糊搜索
+     *
+     * @param fuzzySearch
+     * @return
+     */
+    @Override
+    public List<PaperIdWithName> listByName(FuzzySearch fuzzySearch) {
+        QueryWrapper<Paper> wrapper = new QueryWrapper<>();
+        wrapper.select(Paper.ID,Paper.NAME);
+        wrapper.eq(Paper.COMPANY_ID,fuzzySearch.getCompanyId());
+        wrapper.likeRight(Paper.NAME,fuzzySearch.getPaperName());
+        List<Paper> paperList = list(wrapper);
+        return paperList.stream().map(p ->
+                new PaperIdWithName(p.getId(),p.getName())
+        ).collect(Collectors.toList());
     }
 }
