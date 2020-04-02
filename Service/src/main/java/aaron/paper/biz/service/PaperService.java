@@ -134,4 +134,9 @@ public interface PaperService extends IService<Paper> {
      * @return
      */
     List<PaperIdWithName> listByName(FuzzySearch fuzzySearch);
+
+    /**
+     * 获取试卷
+     */
+    Paper getPaper(long id);
 }

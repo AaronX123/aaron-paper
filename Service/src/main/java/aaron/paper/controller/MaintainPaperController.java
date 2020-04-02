@@ -5,6 +5,7 @@ import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
 import aaron.common.utils.CommonUtils;
+import aaron.paper.api.api.PaperInfoApi;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperSubject;
 import aaron.paper.biz.service.PaperService;
@@ -52,6 +53,9 @@ public class MaintainPaperController {
     @Autowired
     BaseService baseService;
 
+    @Autowired
+    PaperInfoApi paperInfoApi;
+
     /**
      * 查询试卷表单
      * @param request
@@ -96,27 +100,11 @@ public class MaintainPaperController {
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
     }
 
-    @SuppressWarnings("all")
+
     @MethodEnhancer
     @PostMapping(ControllerConstant.MAINTAIN_PAPER_DETAIL)
     public CommonResponse<PaperDetail> paperDetail(@RequestBody @Valid CommonRequest<Long> request){
-        long id = request.getData();
-        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
-        if (cache != null && cache.get(id) != null){
-            PaperDetail detail = (PaperDetail) cache.get(id);
-            return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,detail);
-        }else {
-            PaperDetail detail = paperService.getPaperInfo(id);
-            // 需要将类型和难度转换下
-            detail.setDifficultyValue(baseService.getCache(detail.getDifficulty()));
-            detail.setCategoryValue(baseService.getCache(detail.getCategory()));
-            for (PaperSubject subject : detail.getCurrentPaperSubjectDtoList()) {
-                subject.setCategoryValue(baseService.getCache(subject.getCategoryId()));
-                subject.setDifficultyValue(baseService.getCache(subject.getDifficulty()));
-            }
-            cache.put(id,detail);
-            return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,detail);
-        }
+        return paperInfoApi.queryDetailByPaperId(request);
     }
 
 }

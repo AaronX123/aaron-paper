@@ -499,4 +499,18 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
                 new PaperIdWithName(p.getId(),p.getName())
         ).collect(Collectors.toList());
     }
+
+    /**
+     * 获取试卷
+     *
+     * @param id
+     */
+    @Override
+    public Paper getPaper(long id) {
+        Paper paper = getById(id);
+        if (paper == null){
+            throw new PaperException(PaperError.PAPER_NOT_EXIST);
+        }
+        return paper;
+    }
 }

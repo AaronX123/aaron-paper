@@ -11,9 +11,17 @@ import aaron.paper.api.constant.ApiConstant;
 import aaron.paper.api.dto.FuzzySearch;
 import aaron.paper.api.dto.PaperDetail;
 import aaron.paper.api.dto.PaperIdWithName;
+import aaron.paper.api.dto.PaperSubject;
 import aaron.paper.biz.service.PaperService;
+import aaron.paper.biz.service.impl.BaseService;
+import aaron.paper.common.constant.CacheConstant;
+import aaron.paper.common.exception.PaperError;
+import aaron.paper.common.exception.PaperException;
+import aaron.paper.pojo.model.Paper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +41,12 @@ public class PaperInfoApiImpl implements PaperInfoApi {
 
     @Autowired
     CommonState state;
+
+    @Autowired
+    CacheManager cacheManager;
+
+    @Autowired
+    BaseService baseService;
 
     /**
      * 发布试卷
@@ -84,11 +98,28 @@ public class PaperInfoApiImpl implements PaperInfoApi {
      * @param request
      * @return
      */
+    @SuppressWarnings("all")
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_DETAIL)
     @Override
     public CommonResponse<PaperDetail> queryDetailByPaperId(CommonRequest<Long> request) {
-        return null;
+        long id = request.getData();
+        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+        if (cache != null && cache.get(id) != null){
+            PaperDetail detail = (PaperDetail) cache.get(id);
+            return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
+        }else {
+            PaperDetail detail = paperService.getPaperInfo(id);
+            // 需要将类型和难度转换下
+            detail.setDifficultyValue(baseService.getCache(detail.getDifficulty()));
+            detail.setCategoryValue(baseService.getCache(detail.getCategory()));
+            for (PaperSubject subject : detail.getCurrentPaperSubjectDtoList()) {
+                subject.setCategoryValue(baseService.getCache(subject.getCategoryId()));
+                subject.setDifficultyValue(baseService.getCache(subject.getDifficulty()));
+            }
+            cache.put(id,detail);
+            return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
+        }
     }
 
     /**
@@ -101,7 +132,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_PUBLISHED_TIME)
     @Override
     public CommonResponse<Integer> queryPublishedTimesByPaperId(CommonRequest<Long> request) {
-        return null;
+        return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,paperService.getPaper(request.getData()).getPublishTimes());
     }
 
     /**
@@ -114,6 +145,6 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_NAME)
     @Override
     public CommonResponse<String> queryPaperNameByPaperId(CommonRequest<Long> request) {
-        return null;
+        return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,paperService.getPaper(request.getData()).getName());
     }
 }
