@@ -2,6 +2,7 @@ package aaron.paper.biz.service.impl;
 
 import aaron.baseinfo.api.dto.SubjectPackage;
 import aaron.baseinfo.api.dto.SubjectPackageDto;
+import aaron.common.data.common.CacheConstants;
 import aaron.common.data.common.CommonConstant;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonState;
@@ -12,7 +13,6 @@ import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.PaperSubjectAnswerService;
 import aaron.paper.biz.service.PaperSubjectService;
-import aaron.paper.common.constant.CacheConstant;
 import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.manager.baseinfo.BaseInfoApi;
@@ -256,13 +256,13 @@ public class BaseService {
     @SuppressWarnings("all")
     public void evictPaper(Long[] paperIdList){
         for (Long id : paperIdList) {
-            Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+            Cache cache = cacheManager.getCache(CacheConstants.PAPER_DETAIL);
             cache.evict(id);
         }
     }
     @SuppressWarnings("all")
     public void evictPaper(long id){
-        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+        Cache cache = cacheManager.getCache(CacheConstants.PAPER_DETAIL);
         cache.evict(id);
     }
 }

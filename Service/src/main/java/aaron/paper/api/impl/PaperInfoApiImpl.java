@@ -1,5 +1,6 @@
 package aaron.paper.api.impl;
 
+import aaron.common.data.common.CacheConstants;
 import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
@@ -14,10 +15,6 @@ import aaron.paper.api.dto.PaperIdWithName;
 import aaron.paper.api.dto.PaperSubject;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.impl.BaseService;
-import aaron.paper.common.constant.CacheConstant;
-import aaron.paper.common.exception.PaperError;
-import aaron.paper.common.exception.PaperException;
-import aaron.paper.pojo.model.Paper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
@@ -104,7 +101,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @Override
     public CommonResponse<PaperDetail> queryDetailByPaperId(CommonRequest<Long> request) {
         long id = request.getData();
-        Cache cache = cacheManager.getCache(CacheConstant.PAPER_DETAIL);
+        Cache cache = cacheManager.getCache(CacheConstants.PAPER);
         if (cache != null && cache.get(id) != null){
             PaperDetail detail = (PaperDetail) cache.get(id);
             return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
