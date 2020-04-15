@@ -16,7 +16,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomizedCombExamConfigVo {private String name;
+public class CustomizedCombExamConfigVo {
+    private String name;
     private String status;
     private Long difficulty;
     private String remark;

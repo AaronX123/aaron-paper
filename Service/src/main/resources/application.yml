@@ -1,0 +1,31 @@
+aaron:
+  version: 1
+  data-center-id: 10
+  machine-id: 1
+
+spring:
+  application:
+    name: paper
+  redis:
+    database: 9
+    host: 192.168.1.102
+    port: 6379
+    password:
+  datasource:
+    url: jdbc:mysql://192.168.1.102:3306/paper_center?characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&useAffectedRows=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: xym123
+
+server:
+  port: 10050
+eureka:
+  client:
+    service-url:
+      defaultZone: http://192.168.1.102:8761/eureka
+
+  instance:
+    prefer-ip-address: true
+    # 这个是本服务的ip和端口
+    ip-address: 192.168.1.101
+    non-secure-port: 10050
