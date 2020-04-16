@@ -7,7 +7,7 @@ spring:
   application:
     name: paper
   redis:
-    database: 9
+    database: 8
     host: 118.31.7.229
     port: 6379
     password: xym123
