@@ -12,7 +12,7 @@ spring:
     port: 6379
     password:
   datasource:
-    url: jdbc:mysql://192.168.1.102:3306/paper_center?characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&useAffectedRows=true
+    url: jdbc:mysql://118.31.7.229:3307/paper?characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&useAffectedRows=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: xym123
