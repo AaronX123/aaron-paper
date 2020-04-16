@@ -8,9 +8,9 @@ spring:
     name: paper
   redis:
     database: 9
-    host: 192.168.1.102
+    host: 118.31.7.229
     port: 6379
-    password:
+    password: xym123
   datasource:
     url: jdbc:mysql://118.31.7.229:3307/paper?characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true&useAffectedRows=true
     driver-class-name: com.mysql.cj.jdbc.Driver
