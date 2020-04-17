@@ -19,13 +19,16 @@ spring:
 
 server:
   port: 10050
+  servlet:
+    context-path: /paper
 eureka:
   client:
     service-url:
-      defaultZone: http://192.168.1.102:8761/eureka
+      defaultZone: http://118.31.7.229:8761/eureka
 
   instance:
     prefer-ip-address: true
     # 这个是本服务的ip和端口
-    ip-address: 192.168.1.101
+    ip-address: 192.168.1.102
     non-secure-port: 10050
+
