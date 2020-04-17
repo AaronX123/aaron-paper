@@ -20,10 +20,7 @@ import aaron.paper.pojo.vo.PaperQueryVo;
 import aaron.paper.pojo.vo.PaperVo;
 import autoconfigure.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Map;
@@ -33,6 +30,7 @@ import java.util.Map;
  * @version 1.0
  * @since 2020-03-04
  */
+@RequestMapping(ControllerConstant.TEMPLATE)
 @RestController
 public class TemplatePaperController {
 
