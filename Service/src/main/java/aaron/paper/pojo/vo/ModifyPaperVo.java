@@ -37,6 +37,6 @@ public class ModifyPaperVo {
     private String description;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long version;
-    private List<ModifyPaperSubjectVo> currentPaperSubjectVoList;
+    private List<ModifyPaperSubjectVo> currentPaperSubjectVOList;
     private List<Long> deletedId;
 }

@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,7 +61,7 @@ public class MaintainPaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.MAINTAIN_QUERY_PAPER)
-    public CommonResponse<Map> queryPaper(@RequestBody @Valid CommonRequest<PaperQueryVo> request){
+    public CommonResponse<Map> queryPaper(@RequestBody CommonRequest<PaperQueryVo> request){
         Map res = paperService.queryPaper(CommonUtils.copyProperties(request.getData(), PaperQueryDto.class),false);
         return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,res);
     }
@@ -74,15 +73,16 @@ public class MaintainPaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.MAINTAIN_MODIFY_PAPER)
-    public CommonResponse modifyPaper(@RequestBody @Valid CommonRequest<ModifyPaperVo> request){
+    public CommonResponse modifyPaper(@RequestBody CommonRequest<ModifyPaperVo> request){
         ModifyPaperVo vo = request.getData();
+        baseService.published(vo.getId());
         ModifyPaperDto detail = CommonUtils.copyProperties(vo,ModifyPaperDto.class);
-        List<ModifyPaperSubjectDto> currentPaperSubjectList = vo.getCurrentPaperSubjectVoList().stream().map(
+        List<ModifyPaperSubjectDto> currentPaperSubjectList = vo.getCurrentPaperSubjectVOList().stream().map(
                 subject -> CommonUtils.copyComplicateObject(subject,ModifyPaperSubjectDto.class)
         ).collect(Collectors.toList());
         detail.setCurrentPaperSubjectDtoList(currentPaperSubjectList);
+        baseService.evictPaper(vo.getId());
         if (paperService.paperModify(detail)){
-            baseService.evictPaper(vo.getId());
             return new CommonResponse<>(commonState.getVersion(),commonState.SUCCESS,commonState.SUCCESS_MSG,true);
         }
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
@@ -90,7 +90,7 @@ public class MaintainPaperController {
 
     @MethodEnhancer
     @PostMapping(ControllerConstant.MAINTAIN_DELETE_PAPER)
-    public CommonResponse deletePaper(@RequestBody @Valid CommonRequest<Long[]> request){
+    public CommonResponse deletePaper(@RequestBody CommonRequest<Long[]> request){
         Long[] deletedIdArray = request.getData();
         if (paperService.paperDelete(deletedIdArray)){
             baseService.evictPaper(deletedIdArray);
@@ -99,10 +99,14 @@ public class MaintainPaperController {
         return new CommonResponse<>(commonState.getVersion(),commonState.FAIL,commonState.FAIL_MSG,false);
     }
 
-
+    /**
+     * todo 增加分类功能，将一类题目放一起
+     * @param request
+     * @return
+     */
     @MethodEnhancer
     @PostMapping(ControllerConstant.MAINTAIN_PAPER_DETAIL)
-    public CommonResponse<PaperDetail> paperDetail(@RequestBody @Valid CommonRequest<Long> request){
+    public CommonResponse<PaperDetail> paperDetail(@RequestBody CommonRequest<Long> request){
         return paperInfoApi.queryDetailByPaperId(request);
     }
 

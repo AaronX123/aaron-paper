@@ -47,7 +47,7 @@ public class CreatePaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.CREATE_FAST_GEN)
-    public CommonResponse<String> fastGen(@RequestBody @Valid CommonRequest<CombExamConfigVo> request){
+    public CommonResponse<String> fastGen(@RequestBody CommonRequest<CombExamConfigVo> request){
         UserPermission userPermission = checkAccessAuthority();
         CombExamConfigVo vo = request.getData();
         PaperDto paperDto = CommonUtils.copyProperties(vo,PaperDto.class);
@@ -64,7 +64,7 @@ public class CreatePaperController {
 
     @MethodEnhancer
     @PostMapping(ControllerConstant.CREATE_STANDARD_GEN)
-    public CommonResponse standardGen(@RequestBody @Valid CommonRequest<CustomizedCombExamConfigVo> request){
+    public CommonResponse standardGen(@RequestBody CommonRequest<CustomizedCombExamConfigVo> request){
         UserPermission userPermission = checkAccessAuthority();
         CustomizedCombExamConfigVo vo = request.getData();
         PaperDto paperDto = new PaperDto();
@@ -79,7 +79,7 @@ public class CreatePaperController {
 
     @MethodEnhancer
     @PostMapping(ControllerConstant.CREATE_TEMPLATE_GEN)
-    public CommonResponse templateGen(@RequestBody @Valid CommonRequest<Long> request){
+    public CommonResponse templateGen(@RequestBody CommonRequest<Long> request){
         checkAccessAuthority();
         Long templateId = request.getData();
         PaperDto paperDto = new PaperDto();

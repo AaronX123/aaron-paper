@@ -38,5 +38,5 @@ public class ModifyPaperSubjectVo {
     /**
      * 答案list
      */
-    private List<ModifySubjectAnswerVo> modifySubjectAnswerVos;
+    private List<ModifySubjectAnswerVo> subjectAnswerVOList;
 }

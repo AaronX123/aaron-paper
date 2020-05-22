@@ -42,7 +42,7 @@ public class PaperDetail {
     private String description;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long version;
-    private List<PaperSubject> currentPaperSubjectDtoList;
+    private List<PaperSubject> currentPaperSubjectVOList;
     /**
      * 在前端删除的试题的Id
      */

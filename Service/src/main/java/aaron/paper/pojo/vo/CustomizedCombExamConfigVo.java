@@ -22,5 +22,5 @@ public class CustomizedCombExamConfigVo {
     private Long difficulty;
     private String remark;
     private Long paperType;
-    private List<CustomizedCombExamConfigItemVo> combExamConfigItemVos;
+    private List<CustomizedCombExamConfigItemVo> combExamConfigItemVOs;
 }

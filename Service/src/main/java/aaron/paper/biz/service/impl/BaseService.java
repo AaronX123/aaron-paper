@@ -3,19 +3,23 @@ package aaron.paper.biz.service.impl;
 import aaron.baseinfo.api.dto.SubjectPackage;
 import aaron.baseinfo.api.dto.SubjectPackageDto;
 import aaron.common.data.common.CacheConstants;
-import aaron.common.data.common.CommonConstant;
 import aaron.common.data.common.CommonRequest;
+import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.utils.CommonUtils;
+import aaron.common.utils.RPCUtils;
 import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.PaperSubjectAnswerService;
 import aaron.paper.biz.service.PaperSubjectService;
+import aaron.paper.common.constant.EnumRPCType;
 import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.manager.baseinfo.BaseInfoApi;
+import aaron.paper.manager.exam.ExamInfoApi;
+import aaron.paper.manager.user.UserInfoApi;
 import aaron.paper.pojo.dto.PaperDto;
 import aaron.paper.pojo.dto.SubjectAnswerDto;
 import aaron.paper.pojo.dto.SubjectDto;
@@ -27,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +45,12 @@ import java.util.stream.Collectors;
  */
 @Service
 public class BaseService {
+    public static final int COMPANY = 1;
+    public static final int USER = 2;
+    public static final int CATEGORY = 3;
+    public static final int DICTIONARY = 4;
+    public static final int SUBJECT_TYPE = 5;
+
     @Autowired
     SnowFlake snowFlake;
 
@@ -59,7 +70,14 @@ public class BaseService {
     BaseInfoApi baseInfoApi;
 
     @Autowired
+    UserInfoApi userInfoApi;
+
+    @Autowired
     CommonState commonState;
+
+    @Autowired
+    ExamInfoApi examInfoApi;
+
 
     public Map<SubjectDto, List<SubjectAnswerDto>> parseSubjectPackage(SubjectPackage subjectPackage){
         List<SubjectPackageDto> dtoList = subjectPackage.getDtoList();
@@ -69,7 +87,7 @@ public class BaseService {
         // linkedHashMap可以保证进入顺序一致
         Map<SubjectDto,List<SubjectAnswerDto>> map = new LinkedHashMap<>(dtoList.size());
         for (SubjectPackageDto dto : dtoList) {
-            SubjectDto subjectDto = CommonUtils.copyProperties(dto,SubjectDto.class);
+            SubjectDto subjectDto = CommonUtils.copyProperties(dto.getSubjectDTO(),SubjectDto.class);
             List<SubjectAnswerDto> subjectAnswerDtoList = CommonUtils.convertList(dto.getSubjectAnswerDtoList(),SubjectAnswerDto.class);
             map.put(subjectDto,subjectAnswerDtoList);
         }
@@ -236,15 +254,71 @@ public class BaseService {
      * @return
      */
     @SuppressWarnings("all")
-    public String getCache(long id){
-        Cache cache = cacheManager.getCache(CommonConstant.DICTIONARY);
-        Cache.ValueWrapper valueWrapper = cache.get(id);
-        if (valueWrapper == null){
-            String value = baseInfoApi.getBaseData(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id)).getData();
-            cache.put(id,value);
-            return value;
+    @Nullable
+    public String getBaseInfoCache(long id, int type){
+        if (type == CATEGORY){
+            Cache cache = cacheManager.getCache(CacheConstants.CATEGORY_VAL);
+            Cache.ValueWrapper valueWrapper = cache.get(id);
+            if (valueWrapper == null){
+                CommonResponse response = baseInfoApi.getCategory(id);
+                String value = RPCUtils.parseResponse(response,String.class,RPCUtils.BASEINFO);
+                cache.put(id,value);
+                return value;
+            }
+            return (String) valueWrapper.get();
         }
-        return (String) valueWrapper.get();
+        if (type == DICTIONARY){
+            Cache cache = cacheManager.getCache(CacheConstants.DICTIONARY_VAL);
+            Cache.ValueWrapper wrapper = cache.get(id);
+            if (wrapper == null){
+                CommonResponse response = baseInfoApi.getBaseData(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id));
+                String val = RPCUtils.parseResponse(response,String.class,RPCUtils.BASEINFO);
+                cache.put(id,val);
+                return val;
+            }
+            return (String) wrapper.get();
+        }
+        if (type == SUBJECT_TYPE){
+            Cache cache = cacheManager.getCache(CacheConstants.SUBJECT_TYPE_VAL);
+            Cache.ValueWrapper wrapper = cache.get(id);
+            if (wrapper == null){
+                CommonResponse response = baseInfoApi.getSubjectType(id);
+                String val = RPCUtils.parseResponse(response,String.class,RPCUtils.BASEINFO);
+                cache.put(id,val);
+                return val;
+            }
+            return (String) wrapper.get();
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getUserInfoCache(long id, int type){
+        if (type == COMPANY){
+            Cache companyCache = cacheManager.getCache(CacheConstants.COMPANY_VAL);
+            Cache.ValueWrapper wrapper = companyCache.get(id);
+            if (wrapper != null){
+                return (String) wrapper.get();
+            }else {
+                CommonResponse response = userInfoApi.getCompanyById(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id));
+                String val = RPCUtils.parseResponse(response,String.class, RPCUtils.USER);
+                companyCache.put(id,val);
+                return val;
+            }
+        }
+        if (type == USER){
+            Cache userCache = cacheManager.getCache(CacheConstants.USER_VAL);
+            Cache.ValueWrapper wrapper = userCache.get(id);
+            if (wrapper != null){
+                return (String) wrapper.get();
+            }else {
+                CommonResponse response = userInfoApi.getUserNameById(new CommonRequest<>(commonState.getVersion(),TokenUtils.getToken(),id));
+                String val = RPCUtils.parseResponse(response,String.class,RPCUtils.USER);
+                userCache.put(id,val);
+                return val;
+            }
+        }
+        return null;
     }
 
     /**
@@ -264,5 +338,16 @@ public class BaseService {
     public void evictPaper(long id){
         Cache cache = cacheManager.getCache(CacheConstants.PAPER_DETAIL);
         cache.evict(id);
+    }
+
+    /**
+     * 判断是否已经发布过试卷，发布过则不能变更
+     * @param id
+     */
+    public void published(Long id){
+        CommonResponse response = examInfoApi.checkEditable(id);
+        if (!RPCUtils.parseResponse(response,Boolean.class,RPCUtils.EXAM)){
+            throw new PaperException(PaperError.PAPER_PUBLISHED_CANT_DELETE);
+        }
     }
 }

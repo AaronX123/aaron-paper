@@ -5,6 +5,7 @@ import aaron.common.data.common.CommonRequest;
 import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.logging.annotation.MethodEnhancer;
+import aaron.common.utils.CommonUtils;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.api.api.PaperInfoApi;
@@ -21,6 +22,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -54,7 +56,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_PUBLISH_PAPER)
     @Override
-    public CommonResponse<Boolean> publishPaper(CommonRequest<Long> paperId) {
+    public CommonResponse<Boolean> publishPaper(@RequestBody CommonRequest<Long> paperId) {
         if(paperService.publish(paperId.getData())){
             return new CommonResponse<>(state.getVersion(), state.SUCCESS,state.SUCCESS_MSG,true);
         }
@@ -84,7 +86,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_FUZZY_SEARCH)
     @Override
-    public CommonResponse<List<PaperIdWithName>> fuzzySearchByPaperName(CommonRequest<FuzzySearch> request) {
+    public CommonResponse<List<PaperIdWithName>> fuzzySearchByPaperName(@RequestBody CommonRequest<FuzzySearch> request) {
         List<PaperIdWithName> res = paperService.listByName(request.getData());
         return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,res);
     }
@@ -99,20 +101,23 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_DETAIL)
     @Override
-    public CommonResponse<PaperDetail> queryDetailByPaperId(CommonRequest<Long> request) {
+    public CommonResponse<PaperDetail> queryDetailByPaperId(@RequestBody CommonRequest<Long> request) {
         long id = request.getData();
         Cache cache = cacheManager.getCache(CacheConstants.PAPER);
         if (cache != null && cache.get(id) != null){
-            PaperDetail detail = (PaperDetail) cache.get(id);
+            Cache.ValueWrapper wrapper = cache.get(id);
+            PaperDetail detail = CommonUtils.copyComplicateObject(wrapper.get(),PaperDetail.class);
             return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
         }else {
             PaperDetail detail = paperService.getPaperInfo(id);
             // 需要将类型和难度转换下
-            detail.setDifficultyValue(baseService.getCache(detail.getDifficulty()));
-            detail.setCategoryValue(baseService.getCache(detail.getCategory()));
-            for (PaperSubject subject : detail.getCurrentPaperSubjectDtoList()) {
-                subject.setCategoryValue(baseService.getCache(subject.getCategoryId()));
-                subject.setDifficultyValue(baseService.getCache(subject.getDifficulty()));
+            detail.setDifficultyValue(baseService.getBaseInfoCache(detail.getDifficulty(),BaseService.DICTIONARY));
+            // 这里实际上是字典值
+            detail.setCategoryValue(baseService.getBaseInfoCache(detail.getCategory(),BaseService.DICTIONARY));
+            for (PaperSubject subject : detail.getCurrentPaperSubjectVOList()) {
+                subject.setCategoryValue(baseService.getBaseInfoCache(subject.getCategoryId(),BaseService.CATEGORY));
+                subject.setDifficultyValue(baseService.getBaseInfoCache(subject.getDifficulty(),BaseService.DICTIONARY));
+                subject.setSubjectTypeName(baseService.getBaseInfoCache(subject.getSubjectTypeId(),BaseService.SUBJECT_TYPE));
             }
             cache.put(id,detail);
             return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
@@ -128,7 +133,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_PUBLISHED_TIME)
     @Override
-    public CommonResponse<Integer> queryPublishedTimesByPaperId(CommonRequest<Long> request) {
+    public CommonResponse<Integer> queryPublishedTimesByPaperId(@RequestBody CommonRequest<Long> request) {
         return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,paperService.getPaper(request.getData()).getPublishTimes());
     }
 
@@ -141,7 +146,7 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     @MethodEnhancer
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_NAME)
     @Override
-    public CommonResponse<String> queryPaperNameByPaperId(CommonRequest<Long> request) {
+    public CommonResponse<String> queryPaperNameByPaperId(@RequestBody CommonRequest<Long> request) {
         return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,paperService.getPaper(request.getData()).getName());
     }
 }

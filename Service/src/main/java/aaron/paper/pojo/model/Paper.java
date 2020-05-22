@@ -132,7 +132,7 @@ public class Paper extends Model<Paper> {
     public static final String CREATED_BY = "created_by";
     public static final String CREATED_TIME = "created_time";
     public static final String UPDATED_BY = "updated_by";
-    public static final String UPDATE_TIME = "update_time";
+    public static final String UPDATE_TIME = "updated_time";
     public static final String VERSION = "version";
 
 

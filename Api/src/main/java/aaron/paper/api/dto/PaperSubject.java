@@ -41,5 +41,6 @@ public class PaperSubject {
 
     private String categoryValue;
     private String difficultyValue;
+    private String subjectTypeName;
 
 }

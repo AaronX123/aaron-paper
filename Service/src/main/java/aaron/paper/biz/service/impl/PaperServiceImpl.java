@@ -1,6 +1,5 @@
 package aaron.paper.biz.service.impl;
 
-import aaron.baseinfo.api.dto.BaseDataDto;
 import aaron.baseinfo.api.dto.CombExamConfigItemDto;
 import aaron.baseinfo.api.dto.SubjectPackage;
 import aaron.common.aop.annotation.FullCommonField;
@@ -9,6 +8,7 @@ import aaron.common.data.common.CommonResponse;
 import aaron.common.data.common.CommonState;
 import aaron.common.data.exception.StarterError;
 import aaron.common.utils.CommonUtils;
+import aaron.common.utils.RPCUtils;
 import aaron.common.utils.SnowFlake;
 import aaron.common.utils.TokenUtils;
 import aaron.common.utils.jwt.UserPermission;
@@ -19,27 +19,25 @@ import aaron.paper.biz.dao.PaperDao;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.PaperSubjectAnswerService;
 import aaron.paper.biz.service.PaperSubjectService;
-import aaron.paper.common.constant.EnumRPCType;
 import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.manager.baseinfo.BaseInfoApi;
+import aaron.paper.manager.user.UserInfoApi;
 import aaron.paper.pojo.dto.*;
 import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.model.PaperSubject;
 import aaron.paper.pojo.model.PaperSubjectAnswer;
 import aaron.paper.pojo.vo.CustomizedCombExamConfigVo;
 import aaron.paper.pojo.vo.PaperVo;
-import aaron.user.api.api.UserApi;
-import aaron.user.api.dto.UserInfoDto;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,7 +64,7 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     PaperSubjectAnswerService paperSubjectAnswerService;
 
     @Autowired
-    UserApi userApi;
+    UserInfoApi userApi;
 
     @Autowired
     SnowFlake snowFlake;
@@ -82,7 +80,8 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     public boolean generateFastMode(PaperDto paperDTO) {
         paperDTO.setCombExamTime(paperDTO.getUpdatedTime());
         // 从基础数据获取题目
-        SubjectPackage subjectPackage = baseInfoApi.getSubjectAndAnswer(new CommonRequest<>(state.getVersion(), TokenUtils.getToken(),paperDTO.getConfigId())).getData();
+        CommonResponse response = baseInfoApi.getSubjectAndAnswer(new CommonRequest<>(state.getVersion(), TokenUtils.getToken(),paperDTO.getConfigId()));
+        SubjectPackage subjectPackage = RPCUtils.parseResponse(response,SubjectPackage.class,RPCUtils.BASEINFO);
         Map<SubjectDto,List<SubjectAnswerDto>> map = baseService.parseSubjectPackage(subjectPackage);
         return baseService.insertNewPaper(paperDTO,map);
     }
@@ -103,10 +102,11 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
         paperDTO.setDescription(configVo.getRemark());
         paperDTO.setPaperType(configVo.getPaperType());
         paperDTO.setDifficulty(configVo.getDifficulty());
-        List<CombExamConfigItemDto> dtoList = CommonUtils.convertList(configVo.getCombExamConfigItemVos(),CombExamConfigItemDto.class);
+        List<CombExamConfigItemDto> dtoList = CommonUtils.convertList(configVo.getCombExamConfigItemVOs(),CombExamConfigItemDto.class);
         // 从基础数据获取题目
-        CommonResponse<SubjectPackage> response = baseInfoApi.getSubjectAndAnswerCustomized(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),dtoList));
-        Map<SubjectDto,List<SubjectAnswerDto>> map = baseService.parseSubjectPackage(response.getData());
+        CommonResponse response = baseInfoApi.getSubjectAndAnswerCustomized(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),dtoList));
+        SubjectPackage subjectPackage = RPCUtils.parseResponse(response,SubjectPackage.class,RPCUtils.BASEINFO);
+        Map<SubjectDto,List<SubjectAnswerDto>> map = baseService.parseSubjectPackage(subjectPackage);
         return baseService.insertNewPaper(paperDTO,map);
     }
 
@@ -162,14 +162,22 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
             wrapper.eq(Paper.TEMPLATE,0);
             if (userPermission.getCompanyId() != null){
                 wrapper.eq(Paper.COMPANY_ID,userPermission.getCompanyId());
+            }else {
+                wrapper.eq(Paper.ORG_ID,TokenUtils.getUser().getOrgId());
             }
         }
         if (paperQueryDTO.getDifficulty() != null){
             wrapper.eq(Paper.DIFFICULTY,paperQueryDTO.getDifficulty());
         }
-        wrapper.likeRight(Paper.PAPER_CREATOR,paperQueryDTO.getCreatedBy());
-        wrapper.between(Paper.COMB_EXAM_TIME,paperQueryDTO.getStart(),paperQueryDTO.getEnd());
-        wrapper.likeRight(Paper.NAME,paperQueryDTO.getName());
+        if (StringUtils.isNotBlank(paperQueryDTO.getCreatedBy())){
+            wrapper.likeRight(Paper.PAPER_CREATOR,paperQueryDTO.getCreatedBy());
+        }
+        if (paperQueryDTO.getStart() != null && paperQueryDTO.getEnd() != null){
+            wrapper.between(Paper.COMB_EXAM_TIME,paperQueryDTO.getStart(),paperQueryDTO.getEnd());
+        }
+        if (StringUtils.isNotBlank(paperQueryDTO.getName())){
+            wrapper.likeRight(Paper.NAME,paperQueryDTO.getName());
+        }
         wrapper.orderByDesc(Paper.UPDATE_TIME);
         page = baseMapper.selectPage(page,wrapper);
         List<Paper> paperList = page.getRecords();
@@ -181,12 +189,13 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
         List<PaperVo> paperVoList = new ArrayList<>(paperList.size());
         for (Paper paper : paperList) {
             PaperVo vo = CommonUtils.copyProperties(paper,PaperVo.class);
-            vo.setCompanyValue(baseService.getCache(vo.getCompanyId()));
-            vo.setUpdatedByValue(baseService.getCache(vo.getUpdatedBy()));
-            vo.setPaperTypeValue(baseService.getCache(vo.getPaperType()));
-            vo.setDifficultyValue(baseService.getCache(vo.getDifficulty()));
+            vo.setCompanyValue(baseService.getUserInfoCache(vo.getCompanyId(),BaseService.COMPANY));
+            vo.setUpdatedByValue(baseService.getUserInfoCache(vo.getUpdatedBy(),BaseService.USER));
+            vo.setPaperTypeValue(baseService.getBaseInfoCache(vo.getPaperType(),BaseService.DICTIONARY));
+            vo.setDifficultyValue(baseService.getBaseInfoCache(vo.getDifficulty(),BaseService.DICTIONARY));
+            paperVoList.add(vo);
         }
-        map.put("PaperVO",paperVoList);
+        map.put("paperVO",paperVoList);
         map.put("total",total);
         return map;
     }
@@ -240,7 +249,9 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
             hasDelete = true;
             List<PaperSubject> deletedPaperSubject = paperSubjectService.listByIds(deletedIdList);
             if (!CommonUtils.isEmpty(deletedPaperSubject)){
-                deletedScore = deletedPaperSubject.stream().map(PaperSubject::getScore).count();
+                for (PaperSubject paperSubject : deletedPaperSubject) {
+                    deletedScore += paperSubject.getScore();
+                }
             }
         }
 
@@ -248,13 +259,15 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
         List<ModifyPaperSubjectDto> modifyPaperDtoList = paperDto.getCurrentPaperSubjectDtoList();
         if (!CommonUtils.isEmpty(modifyPaperDtoList)){
             // 获取mark不为9999的试题Id,9999是存在的试题
-            List<Long> addedSubjectIdList = modifyPaperDtoList.stream().filter(s-> 9999 != (s.getMark()))
-                    .map(ModifyPaperSubjectDto::getId).collect(Collectors.toList());
+            List<Long> addedSubjectIdList = modifyPaperDtoList.stream().filter(s ->
+                s.getMark() == null || 9999 != (s.getMark())
+            ).map(ModifyPaperSubjectDto::getId).collect(Collectors.toList());
             double addedScore = 0;
             if (!CommonUtils.isEmpty(addedSubjectIdList)){
                 // 从基础数据服务中获取新添加的试题并进行拷贝
-                CommonResponse<SubjectPackage> response = baseInfoApi.getSubjectById(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),addedSubjectIdList));
-                Map<SubjectDto, List<SubjectAnswerDto>> newSubjectMap = baseService.parseSubjectPackage(response.getData());
+                CommonResponse response = baseInfoApi.getSubjectById(new CommonRequest<>(state.getVersion(),TokenUtils.getToken(),addedSubjectIdList));
+                SubjectPackage subjectPackage = RPCUtils.parseResponse(response,SubjectPackage.class,RPCUtils.BASEINFO);
+                Map<SubjectDto, List<SubjectAnswerDto>> newSubjectMap = baseService.parseSubjectPackage(subjectPackage);
                 // 拷贝试题
                 List<PaperSubject> addedSubject = new ArrayList<>(8);
                 List<PaperSubjectAnswer> addedSubjectAnswer = new ArrayList<>(32);
@@ -294,18 +307,22 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     public boolean modifyPaper(Paper paper, List<Long> deletedIdList, List<PaperSubject> addedSubject,
                                List<PaperSubjectAnswer> addedAnswer, boolean hasDel, boolean hasNew){
         if (hasDel && hasNew){
-            return paperSubjectAnswerService.deleteBySubjectId(deletedIdList) &&
-                    paperSubjectService.removeByIds(deletedIdList) &&
-                    updateById(paper) &&
-                    paperSubjectService.saveBatch(addedSubject) &&
-                    paperSubjectAnswerService.saveBatch(addedAnswer);
+            boolean f1 = paperSubjectAnswerService.deleteBySubjectId(deletedIdList);
+            boolean f2 = paperSubjectService.removeByIds(deletedIdList);
+            boolean f3 = updateById(paper);
+            boolean f4 = paperSubjectService.saveBatch(addedSubject);
+            boolean f5 = paperSubjectAnswerService.saveBatch(addedAnswer);
+            return f1 && f2 && f3 && f4 && f5;
         }else if (hasDel){
-            return paperSubjectAnswerService.deleteBySubjectId(deletedIdList) &&
-                    paperSubjectService.removeByIds(deletedIdList) &&
-                    updateById(paper);
+            boolean f1 = paperSubjectAnswerService.deleteBySubjectId(deletedIdList);
+            boolean f2 = paperSubjectService.removeByIds(deletedIdList);
+            boolean f3 = updateById(paper);
+            return f1 && f2 && f3;
         }else if (hasNew){
-            return updateById(paper) && paperSubjectService.saveBatch(addedSubject) &&
-                    paperSubjectAnswerService.saveBatch(addedAnswer);
+            boolean f1 = updateById(paper);
+            boolean f2 = paperSubjectService.saveBatch(addedSubject);
+            boolean f3 = paperSubjectAnswerService.saveBatch(addedAnswer);
+            return f1 && f2 && f3;
         }else {
             return updateById(paper);
         }
@@ -361,8 +378,9 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
             subjectDtoList.add(subjectDto);
         });
         PaperDetail detail = CommonUtils.copyProperties(paper,PaperDetail.class);
+        // 这里实际上不是category,category是C++题，而不是试卷类型
         detail.setCategory(paper.getPaperType());
-        detail.setCurrentPaperSubjectDtoList(subjectDtoList);
+        detail.setCurrentPaperSubjectVOList(subjectDtoList);
         return detail;
     }
 
@@ -492,8 +510,12 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
     public List<PaperIdWithName> listByName(FuzzySearch fuzzySearch) {
         QueryWrapper<Paper> wrapper = new QueryWrapper<>();
         wrapper.select(Paper.ID,Paper.NAME);
-        wrapper.eq(Paper.COMPANY_ID,fuzzySearch.getCompanyId());
-        wrapper.likeRight(Paper.NAME,fuzzySearch.getPaperName());
+        if (fuzzySearch.getCompanyId() != null){
+            wrapper.eq(Paper.COMPANY_ID,fuzzySearch.getCompanyId());
+        }
+        if (fuzzySearch.getPaperName() != null){
+            wrapper.likeRight(Paper.NAME,fuzzySearch.getPaperName());
+        }
         List<Paper> paperList = list(wrapper);
         return paperList.stream().map(p ->
                 new PaperIdWithName(p.getId(),p.getName())

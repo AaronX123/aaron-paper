@@ -11,14 +11,11 @@ import aaron.common.utils.jwt.UserPermission;
 import aaron.paper.biz.service.PaperService;
 import aaron.paper.biz.service.impl.BaseService;
 import aaron.paper.common.constant.ControllerConstant;
-import aaron.paper.common.exception.PaperError;
 import aaron.paper.common.exception.PaperException;
 import aaron.paper.pojo.dto.PaperDto;
 import aaron.paper.pojo.dto.PaperQueryDto;
-import aaron.paper.pojo.model.Paper;
 import aaron.paper.pojo.vo.PaperQueryVo;
 import aaron.paper.pojo.vo.PaperVo;
-import autoconfigure.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,7 +47,7 @@ public class TemplatePaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.TEMPLATE_DOWNLOAD_PAPER)
-    public CommonResponse<Boolean> downloadPaper(@RequestBody @Valid CommonRequest<PaperVo> request){
+    public CommonResponse<Boolean> downloadPaper(@RequestBody CommonRequest<PaperVo> request){
         PaperVo paperVo = request.getData();
         checkCompany();
         PaperDto paper = CommonUtils.copyProperties(paperVo,PaperDto.class);
@@ -68,7 +65,7 @@ public class TemplatePaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.TEMPLATE_UPLOAD_PAPER)
-    public CommonResponse<Boolean> uploadPaper(@RequestBody @Valid CommonRequest<PaperVo> request){
+    public CommonResponse<Boolean> uploadPaper(@RequestBody CommonRequest<PaperVo> request){
         PaperVo paperVo = request.getData();
         checkCompany();
         PaperDto paper = CommonUtils.copyProperties(paperVo, PaperDto.class);
@@ -85,7 +82,7 @@ public class TemplatePaperController {
      */
     @MethodEnhancer
     @PostMapping(ControllerConstant.TEMPLATE_DELETE_PAPER)
-    public CommonResponse deleteTemplate(@RequestBody @Valid CommonRequest<Long[]> request){
+    public CommonResponse deleteTemplate(@RequestBody CommonRequest<Long[]> request){
         Long[] del = request.getData();
         if (paperService.deleteTemplate(del)) {
             baseService.evictPaper(del);
@@ -96,7 +93,7 @@ public class TemplatePaperController {
 
     @MethodEnhancer
     @PostMapping(ControllerConstant.TEMPLATE_QUERY)
-    public CommonResponse<Map> queryTemplate(@RequestBody @Valid CommonRequest<PaperQueryVo> request){
+    public CommonResponse<Map> queryTemplate(@RequestBody CommonRequest<PaperQueryVo> request){
         Map map = paperService.queryTemplate(CommonUtils.copyProperties(request.getData(), PaperQueryDto.class));
         return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,map);
     }
