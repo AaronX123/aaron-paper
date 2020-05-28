@@ -15,5 +15,6 @@ public class ApiConstant {
     public static final String PAPER_INFO_QUERY_DETAIL = "/paper/info/query/detail";
     public static final String PAPER_INFO_QUERY_PUBLISHED_TIME = "/paper/info/query/published/time";
     public static final String PAPER_INFO_QUERY_PAPER_NAME = "/paper/info/query/paper/name";
+    public static final String PAPER_INFO_QUERY_PAPER_SCORE = "/paper/info/query/paper/score";
 
 }

@@ -210,4 +210,17 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     public CommonResponse<String> queryPaperNameByPaperId(@RequestBody CommonRequest<Long> request) {
         return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,paperService.getPaper(request.getData()).getName());
     }
+
+    /**
+     * 查询试卷分数
+     *
+     * @param request
+     * @return
+     */
+    @MethodEnhancer
+    @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_SCORE)
+    @Override
+    public CommonResponse<Double> queryPaperScore(@RequestBody CommonRequest<Long> request) {
+        return new CommonResponse<>(state.SUCCESS,state.SUCCESS_MSG,paperService.getScore(request.getData()));
+    }
 }

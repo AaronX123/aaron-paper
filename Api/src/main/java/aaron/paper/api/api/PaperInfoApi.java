@@ -65,4 +65,11 @@ public interface PaperInfoApi {
     @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_NAME)
     CommonResponse<String> queryPaperNameByPaperId(CommonRequest<Long> request);
 
+    /**
+     * 查询试卷分数
+     * @param request
+     * @return
+     */
+    @PostMapping(ApiConstant.PAPER_INFO_QUERY_PAPER_SCORE)
+    CommonResponse<Double> queryPaperScore(CommonRequest<Long> request);
 }

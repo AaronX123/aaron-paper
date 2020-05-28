@@ -139,4 +139,11 @@ public interface PaperService extends IService<Paper> {
      * 获取试卷
      */
     Paper getPaper(long id);
+
+    /**
+     * 获取试卷分数
+     * @param id
+     * @return
+     */
+    Double getScore(long id);
 }

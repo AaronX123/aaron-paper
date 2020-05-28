@@ -535,4 +535,22 @@ public class PaperServiceImpl extends ServiceImpl<PaperDao, Paper> implements Pa
         }
         return paper;
     }
+
+    /**
+     * 获取试卷分数
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Double getScore(long id) {
+        QueryWrapper<Paper> wrapper = new QueryWrapper<>();
+        wrapper.eq(Paper.ID,id);
+        wrapper.select(Paper.SCORE);
+        Paper paper = baseMapper.selectOne(wrapper);
+        if (paper == null){
+            throw new PaperException(PaperError.PAPER_NOT_EXIST);
+        }
+        return paper.getScore();
+    }
 }
