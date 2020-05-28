@@ -25,7 +25,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaoyouming
@@ -35,6 +39,13 @@ import java.util.List;
 @RestController
 @Slf4j
 public class PaperInfoApiImpl implements PaperInfoApi {
+    private static final String SELECT = "选择题";
+    private static final String JUDGE = "判断题";
+    private static final String FULL = "填空题";
+    private static final String SIMPLE = "简答题";
+    private static final String CODING = "编程题";
+
+
     @Autowired
     PaperService paperService;
 
@@ -104,12 +115,13 @@ public class PaperInfoApiImpl implements PaperInfoApi {
     public CommonResponse<PaperDetail> queryDetailByPaperId(@RequestBody CommonRequest<Long> request) {
         long id = request.getData();
         Cache cache = cacheManager.getCache(CacheConstants.PAPER);
+        PaperDetail detail;
         if (cache != null && cache.get(id) != null){
             Cache.ValueWrapper wrapper = cache.get(id);
-            PaperDetail detail = CommonUtils.copyComplicateObject(wrapper.get(),PaperDetail.class);
-            return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
+            detail = CommonUtils.copyComplicateObject(wrapper.get(),PaperDetail.class);
+
         }else {
-            PaperDetail detail = paperService.getPaperInfo(id);
+            detail = paperService.getPaperInfo(id);
             // 需要将类型和难度转换下
             detail.setDifficultyValue(baseService.getBaseInfoCache(detail.getDifficulty(),BaseService.DICTIONARY));
             // 这里实际上是字典值
@@ -120,8 +132,57 @@ public class PaperInfoApiImpl implements PaperInfoApi {
                 subject.setSubjectTypeName(baseService.getBaseInfoCache(subject.getSubjectTypeId(),BaseService.SUBJECT_TYPE));
             }
             cache.put(id,detail);
-            return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
         }
+        // 将同一类题放一起，选择判断填空主观题
+        detail = sort(detail);
+        return new CommonResponse<>(state.getVersion(),state.SUCCESS,state.SUCCESS_MSG,detail);
+    }
+
+    private PaperDetail sort(PaperDetail paperDetail){
+        List<PaperSubject> subjects = paperDetail.getCurrentPaperSubjectVOList();
+        List<PaperSubject> res = new LinkedList<>();
+        Iterator<PaperSubject> iterator = subjects.iterator();
+        while (iterator.hasNext()){
+            PaperSubject subject = iterator.next();
+            if (SELECT.equals(subject.getSubjectTypeName())){
+                res.add(subject);
+                iterator.remove();
+            }
+        }
+        iterator = subjects.iterator();
+        while (iterator.hasNext()){
+            PaperSubject subject = iterator.next();
+            if (JUDGE.equals(subject.getSubjectTypeName())){
+                res.add(subject);
+                iterator.remove();
+            }
+        }
+        iterator = subjects.iterator();
+        while (iterator.hasNext()){
+            PaperSubject subject = iterator.next();
+            if (FULL.equals(subject.getSubjectTypeName())){
+                res.add(subject);
+                iterator.remove();
+            }
+        }
+        iterator = subjects.iterator();
+        while (iterator.hasNext()){
+            PaperSubject subject = iterator.next();
+            if (SIMPLE.equals(subject.getSubjectTypeName())){
+                res.add(subject);
+                iterator.remove();
+            }
+        }
+        iterator = subjects.iterator();
+        while (iterator.hasNext()){
+            PaperSubject subject = iterator.next();
+            if (CODING.equals(subject.getSubjectTypeName())){
+                res.add(subject);
+                iterator.remove();
+            }
+        }
+        paperDetail.setCurrentPaperSubjectVOList(res);
+        return paperDetail;
     }
 
     /**
